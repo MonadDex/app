@@ -1,110 +1,207 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <!-- Basic -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    <title>MonadDex — Minimal & Immutable DEX</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="logo.png">
+  <!-- Title & Description -->
+  <title>MonadDex — Simple swaps on Monad</title>
+  <meta name="description" content="MonadDex — Simple swaps on Monad. Swap and provide liquidity for MON ↔ VIN. No owners. No admin keys." />
+  <meta name="theme-color" content="#0B1020" />
 
+  <!-- Logo / Icons -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png" sizes="180x180">
 
-    <!-- Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- Open Graph -->
+  <meta property="og:title" content="MonadDex — Simple swaps on Monad" />
+  <meta property="og:description" content="Swap and provide liquidity for MON ↔ VIN. Immutable and on-chain." />
+  <meta property="og:image" content="logo.png" />
+  <meta property="og:type" content="website" />
 
-    <!-- Style -->
-    <link rel="stylesheet" href="style.css">
+  <!-- MonadDex config (để app.js đọc) -->
+  <meta name="monaddex-chain-name" content="Monad" />
+  <meta name="monaddex-native-symbol" content="MON" />
 
-    <!-- Ethers.js (CDN – không phụ thuộc build tool) -->
-    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <!-- Contracts -->
+  <meta name="monaddex-dex-address" content="0x484A263656eFbB60261bB248e354Ac0473039cDf" />
+  <meta name="monaddex-vin-address" content="0xfB71cbd8CB6f0fb72a9568f11e7E4454309A9cA1" />
+  <meta name="monaddex-wmon-address" content="0x1F3B7cB59dfd7e1a077467aC8D40b47C03b78caa" />
+
+  <!-- CSS & JS -->
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
+  <script src="app.js?v=1" defer></script>
 </head>
 
 <body>
-    <!-- ================= HEADER ================= -->
-    <header class="header">
-        <div class="logo">
-            <img src="logo.png" alt="MonadDex Logo">
-            <span>MonadDex</span>
+
+<!-- ================= HEADER ================= -->
+<header class="vx-header">
+  <div class="vx-container header-grid">
+
+    <!-- Brand -->
+    <a class="brand" href="#" aria-label="MonadDex Home">
+      <img src="logo.png" alt="MonadDex" width="32" height="32" />
+      <div class="brand-text">
+        <span class="brand-name">MonadDex</span>
+        <span class="tagline">Simple swaps on Monad</span>
+      </div>
+    </a>
+
+    <!-- Mobile menu -->
+    <input type="checkbox" id="navToggle" class="nav-toggle">
+    <label for="navToggle" class="burger">
+      <span></span><span></span><span></span>
+    </label>
+
+    <!-- Navigation -->
+    <nav class="top-nav">
+      <a href="#swap" class="tab-link">Swap</a>
+      <a href="#liquidity" class="tab-link">Liquidity</a>
+      <a href="#pools" class="tab-link">Pools</a>
+    </nav>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <span id="networkBadge" class="badge">Monad</span>
+      <button id="connectBtn" class="btn primary">Connect Wallet</button>
+    </div>
+
+  </div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="vx-main vx-container">
+
+  <!-- ===== SWAP ===== -->
+  <section id="swap" class="view-section visible-by-default card">
+    <div class="card-header">
+      <h2>Swap</h2>
+      <p class="sub">Swap MON ↔ VIN instantly. No platform fees.</p>
+    </div>
+
+    <div class="swap-grid">
+
+      <!-- FROM -->
+      <div class="swap-box">
+        <div class="token-row">
+          <button class="token-btn" disabled>
+            <span class="token-dot"></span>
+            <span>MON</span>
+          </button>
+          <span class="muted mini">From</span>
+        </div>
+        <input id="swap_from_amount" class="amount-input"
+               type="text" inputmode="decimal" placeholder="0.0" />
+      </div>
+
+      <!-- FLIP -->
+      <button id="swap_flip_btn" class="flip-btn" aria-label="Flip">
+        <svg viewBox="0 0 24 24">
+          <path d="M7 7h11v4M6 7l3-3m8 13H6v-4m9 7l3-3"/>
+        </svg>
+      </button>
+
+      <!-- TO -->
+      <div class="swap-box">
+        <div class="token-row">
+          <button class="token-btn" disabled>
+            <span class="token-dot"></span>
+            <span>VIN</span>
+          </button>
+          <span class="muted mini">To</span>
+        </div>
+        <input id="swap_to_amount" class="amount-input"
+               type="text" placeholder="0.0" readonly />
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button id="swap_quote_btn" class="btn ghost">Get Quote</button>
+      <button id="swap_execute_btn" class="btn primary">Swap</button>
+      <div id="swap_status" class="status"></div>
+    </div>
+  </section>
+
+  <!-- ===== LIQUIDITY ===== -->
+  <section id="liquidity" class="view-section card">
+    <div class="card-header">
+      <h2>Liquidity</h2>
+      <p class="sub">Provide or remove liquidity for MON ↔ VIN.</p>
+    </div>
+
+    <div class="subcard">
+      <div class="two-cols">
+
+        <!-- MON -->
+        <div class="liq-box">
+          <div class="token-row">
+            <button class="token-btn" disabled>
+              <span class="token-dot"></span>
+              <span>MON</span>
+            </button>
+            <span class="muted mini">MON amount</span>
+          </div>
+          <input id="liq_mon_amount" class="amount-input" placeholder="0.0" />
         </div>
 
-        <button id="connectWalletBtn">Connect Wallet</button>
-    </header>
+        <!-- VIN -->
+        <div class="liq-box">
+          <div class="token-row">
+            <button class="token-btn" disabled>
+              <span class="token-dot"></span>
+              <span>VIN</span>
+            </button>
+            <span class="muted mini">VIN amount</span>
+          </div>
+          <input id="liq_vin_amount" class="amount-input" placeholder="0.0" />
+        </div>
 
-    <!-- ================= MAIN ================= -->
-    <main class="container">
+      </div>
 
-        <!-- ===== INFO ===== -->
-        <section class="card info">
-            <h2>Immutable Monad DEX</h2>
-            <p>
-                ERC20 ↔ ERC20 swap on Monad<br>
-                No owners · No admin keys · No upgrades<br>
-                Liquidity belongs to LPs
-            </p>
-            <p class="verify">Do not trust — Verify.</p>
-        </section>
+      <div class="actions">
+        <button id="liq_supply_btn" class="btn primary">Supply</button>
+        <button id="liq_remove_btn" class="btn ghost">Remove</button>
+        <div id="liq_status" class="status"></div>
+      </div>
+    </div>
+  </section>
 
-        <!-- ===== SWAP ===== -->
-        <section class="card">
-            <h3>Swap</h3>
+  <!-- ===== POOLS ===== -->
+  <section id="pools" class="view-section card">
+    <div class="card-header">
+      <h2>Pool</h2>
+      <p class="sub">MON ↔ VIN liquidity pool status.</p>
+    </div>
 
-            <div class="field">
-                <label>From</label>
-                <input type="number" id="swapAmountIn" placeholder="0.0">
-                <select id="swapFromToken">
-                    <option value="A">Token A</option>
-                    <option value="B">Token B</option>
-                </select>
-            </div>
+    <div id="pool_info" class="pool-list">
+      <div class="muted">Loading pool data…</div>
+    </div>
+  </section>
 
-            <div class="field">
-                <label>To (estimated)</label>
-                <input type="text" id="swapAmountOut" placeholder="0.0" disabled>
-            </div>
+  <section class="note">
+    <p class="muted">
+      Immutable AMM · No owners · No admin keys · No upgrades<br>
+      Do not trust — Verify.
+    </p>
+  </section>
 
-            <button id="swapBtn">Swap</button>
-        </section>
+</main>
 
-        <!-- ===== LIQUIDITY ===== -->
-        <section class="card">
-            <h3>Liquidity</h3>
+<!-- ================= FOOTER ================= -->
+<footer class="vx-footer">
+  <div class="vx-container">
+    <span>MonadDex</span>
+    <a href="https://vicscan.xyz/address/0x484A263656eFbB60261bB248e354Ac0473039cDf" target="_blank">Contract</a>
+    <a href="https://github.com/monaddex/app" target="_blank">Source</a>
+  </div>
+</footer>
 
-            <div class="field">
-                <label>Amount Token A</label>
-                <input type="number" id="liqAmountA" placeholder="0.0">
-            </div>
+<!-- Toast -->
+<div id="toast" class="toast"></div>
 
-            <div class="field">
-                <label>Amount Token B</label>
-                <input type="number" id="liqAmountB" placeholder="0.0">
-            </div>
-
-            <button id="addLiquidityBtn">Add Liquidity</button>
-            <button id="removeLiquidityBtn" class="secondary">Remove Liquidity</button>
-        </section>
-
-        <!-- ===== POOL INFO ===== -->
-        <section class="card">
-            <h3>Pool Info</h3>
-            <ul class="stats">
-                <li>Reserve A: <span id="reserveA">-</span></li>
-                <li>Reserve B: <span id="reserveB">-</span></li>
-                <li>Total LP Shares: <span id="totalShares">-</span></li>
-                <li>Your Shares: <span id="userShares">-</span></li>
-            </ul>
-        </section>
-
-    </main>
-
-    <!-- ================= FOOTER ================= -->
-    <footer class="footer">
-        <p>
-            MonadDex · Immutable · On-chain · Open Source<br>
-            Contracts deployed — UI is optional
-        </p>
-    </footer>
-
-    <!-- App Logic -->
-    <script src="app.js"></script>
 </body>
 </html>

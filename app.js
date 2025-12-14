@@ -1,5 +1,5 @@
 /* =====================================================
-   MonadDex — app.js
+   MonadDex — app.js (FULL VERSION)
    Immutable DEX on Monad (ChainId 143)
 
    Design principles:
@@ -79,8 +79,18 @@ const POOL_ABI = [
  ********************/
 const $ = id => document.getElementById(id);
 const fmt = (v, d=18) => Number(ethers.formatUnits(v, d)).toLocaleString();
-
 function setStatus(el, msg){ el.textContent = msg; }
+
+/********************
+ * TAB NAVIGATION
+ ********************/
+function showSection(id){
+  document.querySelectorAll('.view-section').forEach(sec=>{
+    sec.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  if(el) el.style.display = 'block';
+}
 
 /********************
  * CONNECT WALLET
@@ -118,7 +128,7 @@ async function loadToken(addr){
   const poolAddr = await factory.getPool(addr);
   if(poolAddr === ethers.ZeroAddress){
     pool = null;
-    setStatus($('poolList'), 'No pool yet for this token');
+    $('poolList').innerHTML = '<div class="muted">No pool yet for this token</div>';
     return;
   }
 
@@ -150,16 +160,18 @@ async function refreshPoolInfo(){
 }
 
 /********************
- * SWAP LOGIC
+ * WMON HELPER
  ********************/
 async function ensureWMON(amount){
   const bal = await wmon.balanceOf(user);
   if(bal >= amount) return;
   const need = amount - bal;
-  const tx = await wmon.deposit({ value: need });
-  await tx.wait();
+  await (await wmon.deposit({ value: need })).wait();
 }
 
+/********************
+ * SWAP LOGIC
+ ********************/
 async function swapMONtoToken(){
   if(!pool) return alert('Pool not found');
 
@@ -169,9 +181,8 @@ async function swapMONtoToken(){
   await ensureWMON(amt);
   await wmon.approve(pool.target, amt);
 
-  const tx = await pool.swapAforB(amt);
   setStatus($('swapStatus'), 'Swapping…');
-  await tx.wait();
+  await (await pool.swapAforB(amt)).wait();
   setStatus($('swapStatus'), 'Swap complete');
   await refreshPoolInfo();
 }
@@ -183,14 +194,11 @@ async function swapTokentoMON(){
   if(amt <= 0n) return;
 
   await token.approve(pool.target, amt);
-  const tx = await pool.swapBforA(amt);
   setStatus($('swapStatus'), 'Swapping…');
-  await tx.wait();
+  await (await pool.swapBforA(amt)).wait();
 
   const wBal = await wmon.balanceOf(user);
-  if(wBal > 0n){
-    await (await wmon.withdraw(wBal)).wait();
-  }
+  if(wBal > 0n) await (await wmon.withdraw(wBal)).wait();
 
   setStatus($('swapStatus'), 'Swap complete');
   await refreshPoolInfo();
@@ -210,9 +218,8 @@ async function addLiquidity(){
   await wmon.approve(pool.target, mon);
   await token.approve(pool.target, tok);
 
-  const tx = await pool.addLiquidity(mon, tok);
   setStatus($('liqStatus'), 'Supplying liquidity…');
-  await tx.wait();
+  await (await pool.addLiquidity(mon, tok)).wait();
   setStatus($('liqStatus'), 'Liquidity added');
   await refreshPoolInfo();
 }
@@ -223,14 +230,11 @@ async function removeLiquidity(){
   const shares = await pool.shares(user);
   if(shares <= 0n) return;
 
-  const tx = await pool.removeLiquidity(shares);
   setStatus($('liqStatus'), 'Removing liquidity…');
-  await tx.wait();
+  await (await pool.removeLiquidity(shares)).wait();
 
   const wBal = await wmon.balanceOf(user);
-  if(wBal > 0n){
-    await (await wmon.withdraw(wBal)).wait();
-  }
+  if(wBal > 0n) await (await wmon.withdraw(wBal)).wait();
 
   setStatus($('liqStatus'), 'Liquidity removed');
   await refreshPoolInfo();
@@ -240,6 +244,17 @@ async function removeLiquidity(){
  * EVENTS
  ********************/
 window.addEventListener('load', ()=>{
+  // tabs
+  document.querySelectorAll('.top-nav a').forEach(link=>{
+    link.addEventListener('click', e=>{
+      e.preventDefault();
+      showSection(link.getAttribute('href').replace('#',''));
+    });
+  });
+
+  showSection('swap');
+
+  // buttons
   $('connectBtn').onclick = connectWallet;
   $('swapExecute').onclick = swapMONtoToken;
   $('swapFlip').onclick = ()=>{ $('swapExecute').onclick = swapTokentoMON; };

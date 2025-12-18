@@ -1,263 +1,171 @@
-/* =====================================================
-   MonadDex — app.js (FULL VERSION)
-   Immutable DEX on Monad (ChainId 143)
+// ================================
+// MonadDex app.js
+// ================================
 
-   Design principles:
-   - Users only need MON
-   - WMON is handled internally
-   - Pools are discovered via Factory (no hardcode)
-   - VIN is default demo token, but logic is generic ERC20
-   - No owner, no admin, no upgrade
-   Do not trust — Verify.
-   ===================================================== */
+let provider;
+let signer;
+let userAddress;
 
-'use strict';
+// ================================
+// CONSTANTS
+// ================================
+const CHAIN_ID = 143;
 
-/********************
- * READ CONFIG
- ********************/
-const CFG = {
-  chainId: Number(document.querySelector('meta[name="monaddex-chain-id"]').content),
-  chainName: document.querySelector('meta[name="monaddex-chain-name"]').content,
-  nativeSymbol: document.querySelector('meta[name="monaddex-native-symbol"]').content,
-  wmon: document.querySelector('meta[name="monaddex-wmon-address"]').content,
-  factory: document.querySelector('meta[name="monaddex-factory-address"]').content,
-  defaultToken: document.querySelector('meta[name="monaddex-demo-token"]').content
-};
+const WMON_ADDRESS = "0x1F3B7cB59dfd7e1a077467aC8D40b47C03b78caa";
+const FACTORY_ADDRESS = "0x954905B4Bd45877466832A2B8cFDED720fE630DF";
+const VIN_ADDRESS = "0xfB71cbd8CB6f0fb72a9568f11e7E4454309A9cA1";
 
-/********************
- * GLOBAL STATE
- ********************/
-let provider, signer, user;
-let factory, wmon;
-let token;      // ERC20 current token
-let pool;       // MonadDexPool
-let tokenAddress = CFG.defaultToken;
-
-/********************
- * MINIMAL ABIs
- ********************/
+// ================================
+// ABIs (MINIMAL)
+// ================================
 const ERC20_ABI = [
-  'function balanceOf(address) view returns (uint256)',
-  'function approve(address,uint256) returns (bool)',
-  'function allowance(address,address) view returns (uint256)',
-  'function decimals() view returns (uint8)',
-  'function symbol() view returns (string)',
-  'function name() view returns (string)'
-];
-
-const WMON_ABI = [
-  'function deposit() payable',
-  'function withdraw(uint256)',
-  'function balanceOf(address) view returns (uint256)',
-  'function approve(address,uint256) returns (bool)'
+  "function balanceOf(address) view returns (uint256)",
+  "function approve(address,uint256) returns (bool)",
+  "function allowance(address,address) view returns (uint256)",
+  "function decimals() view returns (uint8)",
+  "function symbol() view returns (string)"
 ];
 
 const FACTORY_ABI = [
-  'function getPool(address) view returns (address)',
-  'function createPool(address) returns (address)',
-  'function allPoolsLength() view returns (uint256)',
-  'function allPools(uint256) view returns (address)',
-  'function WMON() view returns (address)'
+  "function getPool(address) view returns (address)"
 ];
 
 const POOL_ABI = [
-  'function reserveA() view returns (uint256)',
-  'function reserveB() view returns (uint256)',
-  'function addLiquidity(uint256,uint256)',
-  'function removeLiquidity(uint256)',
-  'function swapAforB(uint256)',
-  'function swapBforA(uint256)',
-  'function shares(address) view returns (uint256)',
-  'function totalShares() view returns (uint256)',
-  'function TOKEN() view returns (address)',
-  'function WMON() view returns (address)'
+  "function WMON() view returns (address)",
+  "function TOKEN() view returns (address)",
+  "function reserveA() view returns (uint256)",
+  "function reserveB() view returns (uint256)",
+  "function addLiquidity(uint256,uint256)",
+  "function removeLiquidity(uint256)",
+  "function swapAForB(uint256,uint256)",
+  "function swapBForA(uint256,uint256)"
 ];
 
-/********************
- * UI HELPERS
- ********************/
-const $ = id => document.getElementById(id);
-const fmt = (v, d=18) => Number(ethers.formatUnits(v, d)).toLocaleString();
-function setStatus(el, msg){ el.textContent = msg; }
-
-/********************
- * TAB NAVIGATION
- ********************/
-function showSection(id){
-  document.querySelectorAll('.view-section').forEach(sec=>{
-    sec.style.display = 'none';
-  });
-  const el = document.getElementById(id);
-  if(el) el.style.display = 'block';
-}
-
-/********************
- * CONNECT WALLET
- ********************/
-async function connectWallet(){
-  if(!window.ethereum) return alert('No wallet found');
-
-  provider = new ethers.BrowserProvider(window.ethereum);
-  await provider.send('eth_requestAccounts', []);
-
-  const net = await provider.getNetwork();
-  if(Number(net.chainId) !== CFG.chainId){
-    alert('Please switch to Monad Mainnet');
+// ================================
+// CONNECT WALLET
+// ================================
+async function connectWallet() {
+  if (!window.ethereum) {
+    alert("MetaMask not found");
     return;
   }
 
-  signer = await provider.getSigner();
-  user = await signer.getAddress();
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
 
-  $('connectBtn').textContent = user.slice(0,6)+'…'+user.slice(-4);
-
-  factory = new ethers.Contract(CFG.factory, FACTORY_ABI, signer);
-  wmon = new ethers.Contract(CFG.wmon, WMON_ABI, signer);
-
-  await loadToken(tokenAddress);
-}
-
-/********************
- * LOAD TOKEN & POOL
- ********************/
-async function loadToken(addr){
-  tokenAddress = addr;
-  token = new ethers.Contract(addr, ERC20_ABI, signer);
-
-  const poolAddr = await factory.getPool(addr);
-  if(poolAddr === ethers.ZeroAddress){
-    pool = null;
-    $('poolList').innerHTML = '<div class="muted">No pool yet for this token</div>';
+  const network = await provider.getNetwork();
+  if (network.chainId !== CHAIN_ID) {
+    alert("Please switch to Monad Mainnet (chainId 143)");
     return;
   }
 
-  pool = new ethers.Contract(poolAddr, POOL_ABI, signer);
-  await refreshPoolInfo();
+  signer = provider.getSigner();
+  userAddress = await signer.getAddress();
+
+  document.getElementById("walletAddress").innerText =
+    userAddress.slice(0, 6) + "..." + userAddress.slice(-4);
+
+  await refreshBalances();
+  await loadPoolInfo();
 }
 
-/********************
- * POOL INFO
- ********************/
-async function refreshPoolInfo(){
-  if(!pool) return;
+// ================================
+// LOAD BALANCES
+// ================================
+async function refreshBalances() {
+  const monBalance = await provider.getBalance(userAddress);
+  document.getElementById("monBalance").innerText =
+    ethers.utils.formatEther(monBalance);
 
-  const [rA, rB, ts, us] = await Promise.all([
-    pool.reserveA(),
-    pool.reserveB(),
-    pool.totalShares(),
-    pool.shares(user)
-  ]);
+  const wmon = new ethers.Contract(WMON_ADDRESS, ERC20_ABI, provider);
+  const vin = new ethers.Contract(VIN_ADDRESS, ERC20_ABI, provider);
 
-  $('poolList').innerHTML = `
-    <div class="card">
-      <div>WMON reserve: <b>${fmt(rA)}</b></div>
-      <div>Token reserve: <b>${fmt(rB)}</b></div>
-      <div>Total shares: <b>${fmt(ts)}</b></div>
-      <div>Your shares: <b>${fmt(us)}</b></div>
-    </div>
-  `;
+  const wmonBal = await wmon.balanceOf(userAddress);
+  const vinBal = await vin.balanceOf(userAddress);
+
+  document.getElementById("wmonBalance").innerText =
+    ethers.utils.formatEther(wmonBal);
+  document.getElementById("vinBalance").innerText =
+    ethers.utils.formatEther(vinBal);
 }
 
-/********************
- * WMON HELPER
- ********************/
-async function ensureWMON(amount){
-  const bal = await wmon.balanceOf(user);
-  if(bal >= amount) return;
-  const need = amount - bal;
-  await (await wmon.deposit({ value: need })).wait();
+// ================================
+// LOAD POOL
+// ================================
+async function loadPoolInfo() {
+  const factory = new ethers.Contract(
+    FACTORY_ADDRESS,
+    FACTORY_ABI,
+    provider
+  );
+
+  const poolAddress = await factory.getPool(VIN_ADDRESS);
+  if (poolAddress === ethers.constants.AddressZero) {
+    document.getElementById("poolStatus").innerText = "Pool not created";
+    return;
+  }
+
+  window.pool = new ethers.Contract(poolAddress, POOL_ABI, signer);
+
+  const rA = await pool.reserveA();
+  const rB = await pool.reserveB();
+
+  document.getElementById("reserveA").innerText =
+    ethers.utils.formatEther(rA);
+  document.getElementById("reserveB").innerText =
+    ethers.utils.formatEther(rB);
 }
 
-/********************
- * SWAP LOGIC
- ********************/
-async function swapMONtoToken(){
-  if(!pool) return alert('Pool not found');
-
-  const amt = ethers.parseUnits($('swapFrom').value || '0');
-  if(amt <= 0n) return;
-
-  await ensureWMON(amt);
-  await wmon.approve(pool.target, amt);
-
-  setStatus($('swapStatus'), 'Swapping…');
-  await (await pool.swapAforB(amt)).wait();
-  setStatus($('swapStatus'), 'Swap complete');
-  await refreshPoolInfo();
+// ================================
+// APPROVE TOKEN
+// ================================
+async function approveToken(token, spender, amount) {
+  const erc20 = new ethers.Contract(token, ERC20_ABI, signer);
+  const tx = await erc20.approve(spender, amount);
+  await tx.wait();
 }
 
-async function swapTokentoMON(){
-  if(!pool) return alert('Pool not found');
+// ================================
+// ADD LIQUIDITY
+// ================================
+async function addLiquidity(vinAmount, wmonAmount) {
+  const amountVin = ethers.utils.parseEther(vinAmount);
+  const amountWmon = ethers.utils.parseEther(wmonAmount);
 
-  const amt = ethers.parseUnits($('swapFrom').value || '0');
-  if(amt <= 0n) return;
+  await approveToken(VIN_ADDRESS, pool.address, amountVin);
+  await approveToken(WMON_ADDRESS, pool.address, amountWmon);
 
-  await token.approve(pool.target, amt);
-  setStatus($('swapStatus'), 'Swapping…');
-  await (await pool.swapBforA(amt)).wait();
+  const tx = await pool.addLiquidity(amountWmon, amountVin);
+  await tx.wait();
 
-  const wBal = await wmon.balanceOf(user);
-  if(wBal > 0n) await (await wmon.withdraw(wBal)).wait();
-
-  setStatus($('swapStatus'), 'Swap complete');
-  await refreshPoolInfo();
+  await refreshBalances();
+  await loadPoolInfo();
 }
 
-/********************
- * LIQUIDITY
- ********************/
-async function addLiquidity(){
-  if(!pool) return alert('Pool not found');
+// ================================
+// SWAP VIN -> MON
+// ================================
+async function swapVinToMon(amount) {
+  const amt = ethers.utils.parseEther(amount);
+  await approveToken(VIN_ADDRESS, pool.address, amt);
 
-  const mon = ethers.parseUnits($('liqMON').value || '0');
-  const tok = ethers.parseUnits($('liqVIN').value || '0');
-  if(mon<=0n || tok<=0n) return;
+  const tx = await pool.swapBForA(amt, 0);
+  await tx.wait();
 
-  await ensureWMON(mon);
-  await wmon.approve(pool.target, mon);
-  await token.approve(pool.target, tok);
-
-  setStatus($('liqStatus'), 'Supplying liquidity…');
-  await (await pool.addLiquidity(mon, tok)).wait();
-  setStatus($('liqStatus'), 'Liquidity added');
-  await refreshPoolInfo();
+  await refreshBalances();
+  await loadPoolInfo();
 }
 
-async function removeLiquidity(){
-  if(!pool) return alert('Pool not found');
+// ================================
+// SWAP MON -> VIN
+// ================================
+async function swapMonToVin(amount) {
+  const amt = ethers.utils.parseEther(amount);
+  await approveToken(WMON_ADDRESS, pool.address, amt);
 
-  const shares = await pool.shares(user);
-  if(shares <= 0n) return;
+  const tx = await pool.swapAForB(amt, 0);
+  await tx.wait();
 
-  setStatus($('liqStatus'), 'Removing liquidity…');
-  await (await pool.removeLiquidity(shares)).wait();
-
-  const wBal = await wmon.balanceOf(user);
-  if(wBal > 0n) await (await wmon.withdraw(wBal)).wait();
-
-  setStatus($('liqStatus'), 'Liquidity removed');
-  await refreshPoolInfo();
+  await refreshBalances();
+  await loadPoolInfo();
 }
-
-/********************
- * EVENTS
- ********************/
-window.addEventListener('load', ()=>{
-  // tabs
-  document.querySelectorAll('.top-nav a').forEach(link=>{
-    link.addEventListener('click', e=>{
-      e.preventDefault();
-      showSection(link.getAttribute('href').replace('#',''));
-    });
-  });
-
-  showSection('swap');
-
-  // buttons
-  $('connectBtn').onclick = connectWallet;
-  $('swapExecute').onclick = swapMONtoToken;
-  $('swapFlip').onclick = ()=>{ $('swapExecute').onclick = swapTokentoMON; };
-  $('addLiquidity').onclick = addLiquidity;
-  $('removeLiquidity').onclick = removeLiquidity;
-});

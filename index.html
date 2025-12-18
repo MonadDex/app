@@ -1,175 +1,141 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- ================= BASIC ================= -->
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <title>MonadDex</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>MonadDex — Simple swaps on Monad</title>
-  <meta name="description" content="MonadDex — Swap & provide liquidity on Monad. Immutable. No owner. No admin." />
-  <meta name="theme-color" content="#0B1020" />
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="./logo.png" />
 
-  <!-- ================= ICON ================= -->
-  <link rel="icon" type="image/png" href="logo.png" />
-  <link rel="apple-touch-icon" href="logo.png" sizes="180x180" />
+  <!-- Style -->
+  <link rel="stylesheet" href="./style.css" />
 
-  <!-- ================= OPEN GRAPH ================= -->
-  <meta property="og:title" content="MonadDex — Simple swaps on Monad" />
-  <meta property="og:description" content="Immutable AMM on Monad. MON ↔ ERC20 via WMON." />
-  <meta property="og:image" content="logo.png" />
-  <meta property="og:type" content="website" />
-
-  <!-- ================= MONADDEX CONFIG (FOR app.js) ================= -->
-  <meta name="monaddex-chain-id" content="143" />
-  <meta name="monaddex-chain-name" content="Monad Mainnet" />
-  <meta name="monaddex-native-symbol" content="MON" />
-
-  <!-- Core contracts -->
-  <meta name="monaddex-wmon-address" content="0x1F3B7cB59dfd7e1a077467aC8D40b47C03b78caa" />
-  <meta name="monaddex-factory-address" content="0x954905B4Bd45877466832A2B8cFDED720fE630DF" />
-
-  <!-- Demo token (VIN) -->
-  <meta name="monaddex-demo-token" content="0xfB71cbd8CB6f0fb72a9568f11e7E4454309A9cA1" />
-
-  <!-- ================= CSS & JS ================= -->
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
-  <script src="app.js" defer></script>
+  <!-- Ethers -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
-<header class="vx-header">
-  <div class="vx-container header-grid">
-
-    <!-- Brand -->
-    <a class="brand" href="#">
-      <img src="logo.png" width="32" height="32" alt="MonadDex" />
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <img src="./logo.png" alt="MonadDex" class="logo" />
       <div>
-        <div class="brand-name">MonadDex</div>
-        <div class="tagline">Simple swaps on Monad</div>
+        <div class="title">MonadDex</div>
+        <div class="subtitle">Simple swaps on Monad</div>
       </div>
-    </a>
+    </div>
 
-    <!-- Navigation -->
-    <nav class="top-nav">
-      <a href="#swap" class="tab-link">Swap</a>
-      <a href="#liquidity" class="tab-link">Liquidity</a>
-      <a href="#pools" class="tab-link">Pools</a>
-    </nav>
-
-    <!-- Actions -->
-    <div class="header-actions">
-      <span id="networkBadge" class="badge">Monad</span>
+    <div class="header-right">
       <button id="connectBtn" class="btn primary">Connect Wallet</button>
+      <div id="walletInfo" class="wallet-info hidden">
+        <span id="walletAddress">0x...</span>
+      </div>
     </div>
+  </header>
 
-  </div>
-</header>
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" data-tab="swap">Swap</button>
+    <button class="nav-btn" data-tab="liquidity">Liquidity</button>
+    <button class="nav-btn" data-tab="pools">Pools</button>
+  </nav>
 
-<!-- ================= MAIN ================= -->
-<main class="vx-main vx-container">
+  <!-- MAIN -->
+  <main class="main">
 
-  <!-- ===== SWAP ===== -->
-  <section id="swap" class="card view-section visible-by-default">
-    <div class="card-header">
+    <!-- SWAP -->
+    <section id="swap" class="panel active">
       <h2>Swap</h2>
-      <p class="sub">Swap MON ↔ VIN via WMON. No platform fees.</p>
-    </div>
+      <p class="panel-desc">Swap MON ↔ Token instantly. No platform fees.</p>
 
-    <div class="swap-grid">
-
-      <!-- FROM -->
-      <div class="swap-box">
-        <div class="token-row">
-          <span>MON</span>
-          <span class="mini muted">From</span>
+      <div class="card">
+        <div class="token-box">
+          <label>From</label>
+          <div class="token-row">
+            <select id="swapFromToken">
+              <option value="MON">MON</option>
+            </select>
+            <input type="number" id="swapFromAmount" placeholder="0.0" />
+          </div>
         </div>
-        <input id="swapFrom" class="amount-input" placeholder="0.0" />
-      </div>
 
-      <!-- FLIP -->
-      <button id="swapFlip" class="flip-btn">⇅</button>
+        <div class="swap-arrow">⇅</div>
 
-      <!-- TO -->
-      <div class="swap-box">
-        <div class="token-row">
-          <span>VIN</span>
-          <span class="mini muted">To</span>
+        <div class="token-box">
+          <label>To</label>
+          <div class="token-row">
+            <input type="text" id="swapToToken" placeholder="Token address (VIN default)" />
+            <input type="number" id="swapToAmount" placeholder="0.0" disabled />
+          </div>
         </div>
-        <input id="swapTo" class="amount-input" placeholder="0.0" readonly />
+
+        <button id="getQuoteBtn" class="btn secondary">Get Quote</button>
+        <button id="swapBtn" class="btn primary">Swap</button>
       </div>
+    </section>
 
-    </div>
-
-    <div class="actions">
-      <button id="swapQuote" class="btn ghost">Get Quote</button>
-      <button id="swapExecute" class="btn primary">Swap</button>
-      <div id="swapStatus" class="status"></div>
-    </div>
-  </section>
-
-  <!-- ===== LIQUIDITY ===== -->
-  <section id="liquidity" class="card view-section">
-    <div class="card-header">
+    <!-- LIQUIDITY -->
+    <section id="liquidity" class="panel">
       <h2>Liquidity</h2>
-      <p class="sub">Provide or remove liquidity for VIN ↔ WMON.</p>
-    </div>
+      <p class="panel-desc">Provide liquidity and earn swap fees.</p>
 
-    <div class="subcard two-cols">
+      <div class="card">
+        <div class="token-box">
+          <label>Token Address</label>
+          <input type="text" id="lpToken" placeholder="Token address (VIN default)" />
+        </div>
 
-      <div class="liq-box">
-        <span class="mini muted">MON</span>
-        <input id="liqMON" class="amount-input" placeholder="0.0" />
+        <div class="token-box">
+          <label>MON Amount</label>
+          <input type="number" id="lpMonAmount" placeholder="0.0" />
+        </div>
+
+        <div class="token-box">
+          <label>Token Amount</label>
+          <input type="number" id="lpTokenAmount" placeholder="0.0" />
+        </div>
+
+        <button id="addLiquidityBtn" class="btn primary">Add Liquidity</button>
+        <button id="removeLiquidityBtn" class="btn danger">Remove Liquidity</button>
       </div>
+    </section>
 
-      <div class="liq-box">
-        <span class="mini muted">VIN</span>
-        <input id="liqVIN" class="amount-input" placeholder="0.0" />
-      </div>
-
-    </div>
-
-    <div class="actions">
-      <button id="addLiquidity" class="btn primary">Supply</button>
-      <button id="removeLiquidity" class="btn ghost">Remove</button>
-      <div id="liqStatus" class="status"></div>
-    </div>
-  </section>
-
-  <!-- ===== POOLS ===== -->
-  <section id="pools" class="card view-section">
-    <div class="card-header">
+    <!-- POOLS -->
+    <section id="pools" class="panel">
       <h2>Pools</h2>
-      <p class="sub">Live liquidity data from MonadDexFactory.</p>
-    </div>
+      <p class="panel-desc">All pools created via MonadDex Factory.</p>
 
-    <div id="poolList" class="pool-list">
-      <div class="muted">Loading pools…</div>
-    </div>
-  </section>
+      <div class="card">
+        <table class="pool-table">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Pool Address</th>
+              <th>Reserves</th>
+            </tr>
+          </thead>
+          <tbody id="poolList">
+            <tr>
+              <td colspan="3" class="muted">No data loaded</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
-  <!-- ===== NOTE ===== -->
-  <section class="note">
-    <p class="muted">
-      Immutable AMM · No owners · No admin keys · No upgrades<br/>
-      Do not trust — Verify.
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>
+      Immutable AMM · No owners · No admin keys · No upgrades<br />
+      <strong>Do not trust — Verify.</strong>
     </p>
-  </section>
+  </footer>
 
-</main>
-
-<!-- ================= FOOTER ================= -->
-<footer class="vx-footer">
-  <div class="vx-container">
-    <span>MonadDex</span>
-    <a href="#" target="_blank">Factory</a>
-    <a href="#" target="_blank">Source</a>
-  </div>
-</footer>
-
-<div id="toast" class="toast"></div>
-
+  <!-- APP -->
+  <script src="./app.js"></script>
 </body>
 </html>

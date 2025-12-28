@@ -1,410 +1,223 @@
-/* ===============================
-   MonadDex – Global Reset
-================================ */
+/* ================= RESET ================= */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
-:root {
-  --bg: #0b1020;
-  --bg-card: #121a33;
-  --bg-soft: #0f1730;
-  --border: #1e2a52;
-
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-
-  --danger: #ef4444;
-  --success: #22c55e;
-
-  --radius: 14px;
-}
-
-html, body {
-  width: 100%;
-  height: 100%;
-}
-
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
                Roboto, Helvetica, Arial, sans-serif;
-  background: linear-gradient(180deg, #0b1020 0%, #070b16 100%);
-  color: var(--text);
+  background: #0b1020;
+  color: #e5e7eb;
 }
 
-/* ===============================
-   Containers
-================================ */
-.vx-container {
-  max-width: 1100px;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-.vx-main {
-  padding-top: 96px;
-  padding-bottom: 60px;
-}
-
-/* ===============================
-   Header
-================================ */
-.vx-header {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background: rgba(11, 16, 32, 0.92);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
-  z-index: 10;
-}
-
-.header-grid {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  height: 64px;
-  gap: 12px;
-}
-
-.brand {
+/* ================= HEADER ================= */
+.app-header {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: var(--text);
-  text-decoration: none;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #1e2a52;
+  background: #0b1020;
 }
 
-.brand-text {
+.logo {
   display: flex;
-  flex-direction: column;
-}
-
-.brand-name {
+  align-items: center;
+  gap: 8px;
   font-weight: 700;
 }
 
-.tagline {
-  font-size: 12px;
-  color: var(--muted);
+.logo img {
+  width: 32px;
+  height: 32px;
 }
 
-/* ===============================
-   Navigation
-================================ */
-.top-nav {
+/* ================= MENU ================= */
+.menu {
   display: flex;
-  justify-content: center;
-  gap: 24px;
+  gap: 10px;
 }
 
-.top-nav a {
-  color: var(--muted);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.top-nav a:hover {
-  color: var(--text);
-}
-
-/* ===============================
-   Buttons
-================================ */
-.btn {
+.menu-btn {
+  background: transparent;
+  border: 1px solid #1e2a52;
+  color: #9ca3af;
+  padding: 6px 14px;
   border-radius: 999px;
-  padding: 8px 16px;
-  font-size: 14px;
+  cursor: pointer;
+}
+
+.menu-btn.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+/* ================= WALLET ================= */
+.wallet {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 6px 14px;
+  border-radius: 999px;
   cursor: pointer;
   border: none;
 }
 
 .btn.primary {
-  background: var(--primary);
+  background: #2563eb;
   color: #fff;
-}
-
-.btn.primary:hover {
-  background: var(--primary-hover);
 }
 
 .btn.ghost {
   background: transparent;
-  border: 1px solid var(--border);
-  color: var(--text);
+  border: 1px solid #1e2a52;
+  color: #e5e7eb;
 }
 
-.btn.ghost:hover {
-  background: var(--bg-soft);
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.badge {
-  font-size: 12px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-/* ===============================
-   Cards
-================================ */
-.card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 24px;
-}
-
-.subcard {
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-top: 16px;
-}
-
-.card-header h2 {
-  margin-bottom: 6px;
-}
-
-.sub {
-  color: var(--muted);
-  font-size: 14px;
-}
-
-/* ===============================
-   Swap / Liquidity Boxes
-================================ */
-.swap-grid {
-  display: grid;
-  gap: 14px;
-  margin-top: 16px;
-}
-
-.swap-box,
-.liq-box {
-  background: var(--bg-soft);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
-}
-
-.token-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.token-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 12px;
-  color: var(--text);
-  cursor: pointer;
-}
-
-.token-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.token-dot {
-  width: 10px;
-  height: 10px;
-  background: var(--primary);
-  border-radius: 50%;
-}
-
-.chev {
-  width: 14px;
-  height: 14px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-}
-
-.amount-input {
+.btn.full {
   width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 22px;
-  color: var(--text);
+  margin-top: 12px;
 }
 
-.amount-input::placeholder {
-  color: var(--muted);
+/* ================= MAIN ================= */
+.app-main {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 16px;
 }
 
-/* ===============================
-   Flip Button
-================================ */
-.flip-btn {
-  align-self: center;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.flip-btn svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: var(--text);
-  stroke-width: 2;
-}
-
-/* ===============================
-   Actions / Status
-================================ */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 16px;
-}
-
-.status {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-/* ===============================
-   Pickers
-================================ */
-.picker {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-}
-
-.picker.hide {
+/* ================= SCREEN ================= */
+.screen {
   display: none;
 }
 
-.picker-card {
-  width: 420px;
-  max-width: calc(100% - 24px);
-  background: var(--bg-card);
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
+.screen.active {
+  display: block;
+}
+
+/* ================= CARD ================= */
+.card {
+  background: #121a33;
+  border: 1px solid #1e2a52;
+  border-radius: 14px;
   padding: 16px;
-}
-
-.picker-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.picker-search {
-  width: 100%;
   margin-top: 12px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-soft);
-  color: var(--text);
 }
 
-.picker-list {
-  list-style: none;
-  margin-top: 12px;
-  max-height: 280px;
-  overflow-y: auto;
+/* ================= FORM ================= */
+.row {
+  margin-bottom: 12px;
 }
 
-.picker-list li {
-  padding: 8px;
-  border-radius: 8px;
-  cursor: pointer;
+.row.center {
+  text-align: center;
 }
 
-.picker-list li:hover {
-  background: var(--bg-soft);
+label {
+  display: block;
+  font-size: 13px;
+  color: #9ca3af;
+  margin-bottom: 4px;
 }
 
-/* ===============================
-   Pools / Positions
-================================ */
-.pool-list {
-  margin-top: 10px;
+.input-group {
   display: flex;
-  flex-direction: column;
   gap: 8px;
 }
 
-.muted {
-  color: var(--muted);
+input {
+  flex: 1;
+  background: transparent;
+  border: 1px solid #1e2a52;
+  border-radius: 10px;
+  padding: 10px;
+  color: #e5e7eb;
+  font-size: 16px;
 }
 
-.mini {
+input::placeholder {
+  color: #6b7280;
+}
+
+input:disabled {
+  opacity: 0.6;
+}
+
+/* ================= TOKEN BUTTON ================= */
+.token-btn {
+  background: #0b1020;
+  border: 1px solid #1e2a52;
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: #e5e7eb;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ================= FLIP ================= */
+.flip-btn {
+  background: #0b1020;
+  border: 1px solid #1e2a52;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+/* ================= POOLS ================= */
+.pool-list {
+  font-size: 14px;
+  color: #9ca3af;
+}
+
+/* ================= FOOTER ================= */
+.app-footer {
+  text-align: center;
   font-size: 12px;
+  color: #6b7280;
+  padding: 12px;
 }
 
-/* ===============================
-   Footer
-================================ */
-.vx-footer {
-  border-top: 1px solid var(--border);
-  padding: 16px 0;
-  background: var(--bg);
+/* ================= TOAST ================= */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #22c55e;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 999px;
+  display: none;
 }
 
-.vx-footer .vx-container {
+.toast.show {
+  display: block;
+}
+
+/* ================= PICKER ================= */
+.picker {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
   display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  color: var(--muted);
+  align-items: center;
+  justify-content: center;
 }
 
-.vx-footer a {
-  color: var(--muted);
-  text-decoration: none;
-  margin-left: 12px;
+.picker.hidden {
+  display: none;
 }
 
-.vx-footer a:hover {
-  color: var(--text);
-}
-
-/* ===============================
-   Responsive
-================================ */
-@media (max-width: 768px) {
-  .top-nav {
-    display: none;
-  }
-
-  .header-grid {
-    grid-template-columns: auto auto;
-  }
+.picker input {
+  width: 80%;
+  max-width: 360px;
+  background: #121a33;
+  border: 1px solid #1e2a52;
 }

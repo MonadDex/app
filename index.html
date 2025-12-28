@@ -2,136 +2,228 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>MonadDex – Permissionless DEX on Monad</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- CSS -->
+  <title>MonadDex</title>
+  <link rel="icon" href="logo.png" />
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Ethers -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <script defer src="app.js"></script>
 </head>
 
 <body>
-  <!-- ================= HEADER ================= -->
-  <header class="header">
-    <div class="header-left">
-      <img src="logo.png" alt="MonadDex" class="logo" />
-      <span class="brand">MonadDex</span>
+  <header class="topbar">
+    <div class="topbar__left">
+      <img class="brand__logo" src="logo.png" alt="MonadDex" />
+      <div class="brand__text">
+        <div class="brand__name">MonadDex</div>
+        <div class="brand__sub">Permissionless AMM on Monad</div>
+      </div>
     </div>
 
-    <div class="header-right">
-      <span id="networkBadge" class="network">Monad</span>
-      <button id="connectWalletBtn" class="btn primary">Connect Wallet</button>
+    <div class="topbar__right">
+      <div class="chip" id="netChip">Network: <span id="netName">-</span></div>
+      <div class="chip" id="acctChip">Wallet: <span id="acctShort">Not connected</span></div>
+      <button class="btn btn--ghost" id="btnSwitch">Switch to Monad</button>
+      <button class="btn btn--primary" id="btnConnect">Connect</button>
     </div>
   </header>
 
-  <!-- ================= NAV ================= -->
-  <nav class="nav">
-    <button class="nav-btn active" data-tab="swap">Swap</button>
-    <button class="nav-btn" data-tab="liquidity">Liquidity</button>
-    <button class="nav-btn" data-tab="pools">Pools</button>
-  </nav>
-
-  <!-- ================= MAIN ================= -->
   <main class="container">
-
-    <!-- ===== SWAP ===== -->
-    <section id="tab-swap" class="tab active">
-      <div class="card">
-        <h2>Swap</h2>
-
-        <div class="input-group">
-          <label>From</label>
-          <div class="token-row">
-            <input type="number" id="swapFromAmount" placeholder="0.0" />
-            <button id="swapFromTokenBtn" class="token-btn">Select</button>
-          </div>
-        </div>
-
-        <div class="swap-arrow">↓</div>
-
-        <div class="input-group">
-          <label>To</label>
-          <div class="token-row">
-            <input type="number" id="swapToAmount" placeholder="0.0" disabled />
-            <button id="swapToTokenBtn" class="token-btn">Select</button>
-          </div>
-        </div>
-
-        <div class="info-row">
-          <span>Slippage</span>
-          <input type="number" id="slippageInput" value="0.5" step="0.1" /> %
-        </div>
-
-        <button id="swapBtn" class="btn primary full">Swap</button>
+    <section class="hero">
+      <div class="hero__title">Swap & Liquidity with MON as default</div>
+      <div class="hero__desc">
+        Paste any token address on Monad, create a pool, add liquidity, swap, and remove liquidity — all permissionless.
       </div>
     </section>
 
-    <!-- ===== LIQUIDITY ===== -->
-    <section id="tab-liquidity" class="tab">
+    <section class="grid">
+      <!-- LEFT: TOKEN SELECT + STATUS -->
       <div class="card">
-        <h2>Add Liquidity</h2>
-
-        <div class="input-group">
-          <label>Token A</label>
-          <div class="token-row">
-            <input type="number" id="liqAmountA" placeholder="0.0" />
-            <button id="liqTokenABtn" class="token-btn">Select</button>
-          </div>
+        <div class="card__header">
+          <div class="card__title">Token Setup</div>
+          <div class="card__hint">MON is always the base coin.</div>
         </div>
 
-        <div class="plus">+</div>
+        <div class="form">
+          <label class="label" for="tokenAddr">Token address (ERC-20 on Monad)</label>
+          <div class="row">
+            <input id="tokenAddr" class="input" placeholder="0x..." autocomplete="off" />
+            <button class="btn btn--ghost" id="btnPaste">Paste</button>
+          </div>
 
-        <div class="input-group">
-          <label>Token B</label>
-          <div class="token-row">
-            <input type="number" id="liqAmountB" placeholder="0.0" />
-            <button id="liqTokenBBtn" class="token-btn">Select</button>
+          <div class="row row--tight">
+            <button class="btn btn--primary" id="btnLoadToken">Load token</button>
+            <button class="btn" id="btnCreatePool">Create Pool</button>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="kvs">
+            <div class="kv">
+              <div class="kv__k">Token</div>
+              <div class="kv__v" id="tokenMeta">-</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">Pair (Token/WMON)</div>
+              <div class="kv__v mono" id="pairAddr">-</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">Reserves</div>
+              <div class="kv__v" id="reserves">-</div>
+            </div>
+            <div class="kv">
+              <div class="kv__k">Your LP Balance</div>
+              <div class="kv__v" id="lpBal">-</div>
+            </div>
+          </div>
+
+          <div class="sep"></div>
+
+          <div class="recent">
+            <div class="recent__title">Recent tokens</div>
+            <div class="recent__list" id="recentList"></div>
           </div>
         </div>
-
-        <button id="addLiquidityBtn" class="btn primary full">
-          Add Liquidity
-        </button>
       </div>
 
+      <!-- RIGHT: TABS -->
       <div class="card">
-        <h2>Your Liquidity</h2>
-        <div id="userLiquidityList" class="list empty">
-          No liquidity found
+        <div class="tabs">
+          <button class="tab tab--active" data-tab="swap">Swap</button>
+          <button class="tab" data-tab="liq">Liquidity</button>
+        </div>
+
+        <!-- SWAP -->
+        <div class="tabpane tabpane--active" id="tab-swap">
+          <div class="card__header">
+            <div class="card__title">Swap</div>
+            <div class="card__hint">Direct 1-hop swaps using existing pools.</div>
+          </div>
+
+          <div class="swapbox">
+            <div class="swaprow">
+              <div class="swaprow__top">
+                <div class="swaprow__label">You pay</div>
+                <div class="swaprow__asset" id="payAsset">MON</div>
+              </div>
+              <div class="swaprow__main">
+                <input class="input input--big" id="swapIn" placeholder="0.0" inputmode="decimal" />
+                <button class="btn btn--ghost btn--mini" id="btnFlip">Flip</button>
+              </div>
+            </div>
+
+            <div class="swapmid">
+              <div class="swapmid__line"></div>
+              <div class="swapmid__pill">↓</div>
+              <div class="swapmid__line"></div>
+            </div>
+
+            <div class="swaprow">
+              <div class="swaprow__top">
+                <div class="swaprow__label">You receive (est.)</div>
+                <div class="swaprow__asset" id="recvAsset">TOKEN</div>
+              </div>
+              <div class="swaprow__main">
+                <input class="input input--big" id="swapOut" placeholder="0.0" inputmode="decimal" disabled />
+              </div>
+            </div>
+
+            <div class="row row--tight">
+              <div class="field">
+                <label class="label">Slippage (%)</label>
+                <input class="input" id="slippage" value="1" inputmode="decimal" />
+              </div>
+              <div class="field">
+                <label class="label">Deadline (minutes)</label>
+                <input class="input" id="deadline" value="20" inputmode="numeric" />
+              </div>
+            </div>
+
+            <div class="kvs kvs--small">
+              <div class="kv">
+                <div class="kv__k">Min received</div>
+                <div class="kv__v" id="minOut">-</div>
+              </div>
+              <div class="kv">
+                <div class="kv__k">Price impact (rough)</div>
+                <div class="kv__v" id="impact">-</div>
+              </div>
+            </div>
+
+            <button class="btn btn--primary btn--full" id="btnSwap">Swap</button>
+            <div class="msg" id="swapMsg"></div>
+          </div>
+        </div>
+
+        <!-- LIQUIDITY -->
+        <div class="tabpane" id="tab-liq">
+          <div class="card__header">
+            <div class="card__title">Liquidity</div>
+            <div class="card__hint">Add or remove liquidity for Token/MON pools.</div>
+          </div>
+
+          <div class="liqgrid">
+            <div class="liqcard">
+              <div class="liqcard__title">Add Liquidity</div>
+
+              <label class="label">Token amount</label>
+              <input class="input" id="addTokenAmt" placeholder="0.0" inputmode="decimal" />
+
+              <label class="label">MON amount</label>
+              <input class="input" id="addMonAmt" placeholder="0.0" inputmode="decimal" />
+
+              <div class="row row--tight">
+                <div class="field">
+                  <label class="label">Token min</label>
+                  <input class="input" id="addTokenMin" placeholder="0.0" inputmode="decimal" />
+                </div>
+                <div class="field">
+                  <label class="label">MON min</label>
+                  <input class="input" id="addMonMin" placeholder="0.0" inputmode="decimal" />
+                </div>
+              </div>
+
+              <button class="btn btn--primary btn--full" id="btnAddLiq">Add Liquidity</button>
+              <div class="msg" id="addMsg"></div>
+            </div>
+
+            <div class="liqcard">
+              <div class="liqcard__title">Remove Liquidity</div>
+
+              <label class="label">LP amount</label>
+              <input class="input" id="remLpAmt" placeholder="0.0" inputmode="decimal" />
+
+              <div class="row row--tight">
+                <div class="field">
+                  <label class="label">Token out min</label>
+                  <input class="input" id="remTokenMin" placeholder="0.0" inputmode="decimal" />
+                </div>
+                <div class="field">
+                  <label class="label">MON out min</label>
+                  <input class="input" id="remMonMin" placeholder="0.0" inputmode="decimal" />
+                </div>
+              </div>
+
+              <button class="btn btn--primary btn--full" id="btnRemoveLiq">Remove Liquidity</button>
+              <div class="msg" id="remMsg"></div>
+            </div>
+          </div>
+
+          <div class="note">
+            Tip: If the pool doesn't exist yet, click <b>Create Pool</b> first, then add liquidity.
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== POOLS ===== -->
-    <section id="tab-pools" class="tab">
-      <div class="card">
-        <h2>All Pools</h2>
-
-        <div id="allPoolsList" class="list empty">
-          No pools created yet
-        </div>
+    <footer class="footer">
+      <div class="footer__left">
+        <span class="mono">Factory:</span> <span class="mono" id="factoryAddrSmall">-</span>
       </div>
-    </section>
-
+      <div class="footer__right">
+        <span class="mono">Router:</span> <span class="mono" id="routerAddrSmall">-</span>
+      </div>
+    </footer>
   </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="footer">
-    <div>
-      <span>MonadDex – Permissionless DEX on Monad</span>
-    </div>
-    <div class="footer-links">
-      <a href="https://monad.xyz" target="_blank">Monad</a>
-      <a href="https://github.com/monaddex" target="_blank">GitHub</a>
-    </div>
-  </footer>
-
-  <!-- ================= APP ================= -->
-  <script src="app.js"></script>
 </body>
 </html>

@@ -1,229 +1,261 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MonadDex</title>
-  <link rel="icon" href="logo.png" />
+  <!-- Basic -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Title -->
+  <title>MonadDex — Simple swaps on Monad</title>
+  <meta name="description" content="MonadDex — Permissionless DEX on Monad. Create pools, provide liquidity, and swap MON ↔ Tokens." />
+  <meta name="theme-color" content="#0B1020" />
+
+  <!-- Logo -->
+  <link rel="icon" type="image/png" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="MonadDex — Simple swaps on Monad" />
+  <meta property="og:description" content="Create pools, provide liquidity, and swap MON ↔ Tokens." />
+  <meta property="og:image" content="logo.png" />
+  <meta property="og:type" content="website" />
+
+  <!-- MonadDex Config -->
+  <meta name="monaddex-factory-address" content="0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6" />
+  <meta name="monaddex-router-address" content="0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E" />
+  <meta name="monaddex-wmon-address" content="0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A" />
+  <meta name="monaddex-chain-id" content="143" />
+  <meta name="monaddex-rpc" content="https://rpc.monad.xyz" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
-  <script defer src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script defer src="app.js"></script>
+
+  <!-- Ethers -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js" defer></script>
+
+  <!-- App -->
+  <script src="app.js?v=1" type="module" defer></script>
 </head>
 
 <body>
-  <header class="topbar">
-    <div class="topbar__left">
-      <img class="brand__logo" src="logo.png" alt="MonadDex" />
-      <div class="brand__text">
-        <div class="brand__name">MonadDex</div>
-        <div class="brand__sub">Permissionless AMM on Monad</div>
+
+<!-- ===================== HEADER ===================== -->
+<header class="vx-header">
+  <div class="vx-container header-grid">
+
+    <a class="brand" href="#" aria-label="MonadDex Home">
+      <img src="logo.png" alt="MonadDex" width="32" height="32" />
+      <div class="brand-text">
+        <span class="brand-name">MonadDex</span>
+        <span class="tagline">Simple swaps on Monad</span>
+      </div>
+    </a>
+
+    <!-- Mobile nav -->
+    <input type="checkbox" id="navToggle" class="nav-toggle" aria-label="Toggle menu">
+    <label for="navToggle" class="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </label>
+
+    <!-- Navigation -->
+    <nav class="top-nav">
+      <a href="#swap" class="tab-link">Swap</a>
+      <a href="#liquidity" class="tab-link">Liquidity</a>
+      <a href="#pools" class="tab-link">Pools</a>
+    </nav>
+
+    <!-- Actions -->
+    <div class="header-actions">
+      <span id="networkBadge" class="badge">Monad · Chain 143</span>
+      <button id="switchNetworkBtn" class="btn ghost">Switch</button>
+      <button id="connectBtn" class="btn primary">Connect Wallet</button>
+    </div>
+
+  </div>
+</header>
+
+<!-- ===================== MAIN ===================== -->
+<main class="vx-main vx-container">
+
+  <!-- ========== SWAP ========== -->
+  <section id="swap" class="view-section visible-by-default card">
+    <div class="card-header">
+      <h2>Swap</h2>
+      <p class="sub">Swap MON and Monad tokens instantly.</p>
+    </div>
+
+    <div class="swap-grid">
+
+      <!-- FROM -->
+      <div class="swap-box">
+        <div class="token-row">
+          <button id="swap_from_token_btn" class="token-btn">
+            <span class="token-dot"></span>
+            <span id="swap_from_symbol">MON</span>
+            <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span class="muted mini">From</span>
+        </div>
+
+        <input id="swap_from_amount"
+               class="amount-input"
+               type="text"
+               inputmode="decimal"
+               placeholder="0.0" />
+      </div>
+
+      <!-- FLIP -->
+      <button id="swap_flip_btn" class="flip-btn" aria-label="Flip">
+        <svg viewBox="0 0 24 24">
+          <path d="M7 7h11v4M6 7l3-3m8 13H6v-4m9 7l3-3"/>
+        </svg>
+      </button>
+
+      <!-- TO -->
+      <div class="swap-box">
+        <div class="token-row">
+          <button id="swap_to_token_btn" class="token-btn">
+            <span class="token-dot"></span>
+            <span id="swap_to_symbol">Select token</span>
+            <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <span class="muted mini">To</span>
+        </div>
+
+        <input id="swap_to_amount"
+               class="amount-input"
+               type="text"
+               placeholder="0.0"
+               readonly />
+      </div>
+
+    </div>
+
+    <div class="actions">
+      <button id="sw_quoteBtn" class="btn ghost">Get Quote</button>
+      <button id="swap_execute_btn" class="btn primary">Swap</button>
+      <div id="sw_status" class="status"></div>
+    </div>
+
+    <!-- Token Picker FROM -->
+    <div id="picker_from" class="picker hide">
+      <div class="picker-card">
+        <div class="picker-head">
+          <h3>Select a token</h3>
+          <button class="picker-close" data-close="#picker_from">×</button>
+        </div>
+        <input id="picker_from_search" class="picker-search" placeholder="Search or paste token address" />
+        <ul id="picker_from_list" class="picker-list"></ul>
       </div>
     </div>
 
-    <div class="topbar__right">
-      <div class="chip" id="netChip">Network: <span id="netName">-</span></div>
-      <div class="chip" id="acctChip">Wallet: <span id="acctShort">Not connected</span></div>
-      <button class="btn btn--ghost" id="btnSwitch">Switch to Monad</button>
-      <button class="btn btn--primary" id="btnConnect">Connect</button>
+    <!-- Token Picker TO -->
+    <div id="picker_to" class="picker hide">
+      <div class="picker-card">
+        <div class="picker-head">
+          <h3>Select a token</h3>
+          <button class="picker-close" data-close="#picker_to">×</button>
+        </div>
+        <input id="picker_to_search" class="picker-search" placeholder="Search or paste token address" />
+        <ul id="picker_to_list" class="picker-list"></ul>
+      </div>
     </div>
-  </header>
 
-  <main class="container">
-    <section class="hero">
-      <div class="hero__title">Swap & Liquidity with MON as default</div>
-      <div class="hero__desc">
-        Paste any token address on Monad, create a pool, add liquidity, swap, and remove liquidity — all permissionless.
-      </div>
-    </section>
+  </section>
 
-    <section class="grid">
-      <!-- LEFT: TOKEN SELECT + STATUS -->
-      <div class="card">
-        <div class="card__header">
-          <div class="card__title">Token Setup</div>
-          <div class="card__hint">MON is always the base coin.</div>
+  <!-- ========== LIQUIDITY ========== -->
+  <section id="liquidity" class="view-section card">
+    <div class="card-header">
+      <h2>Liquidity</h2>
+      <p class="sub">Provide or remove liquidity for MON pools.</p>
+    </div>
+
+    <div class="subcard">
+      <h3>Provide Liquidity (MON ↔ Token)</h3>
+
+      <div class="two-cols">
+
+        <!-- MON -->
+        <div class="liq-box">
+          <div class="token-row">
+            <button class="token-btn" disabled>
+              <span class="token-dot"></span>
+              <span>MON</span>
+            </button>
+            <span class="muted mini">MON amount</span>
+          </div>
+          <input id="liq_mon_amount" class="amount-input" type="number" placeholder="0.0" />
         </div>
 
-        <div class="form">
-          <label class="label" for="tokenAddr">Token address (ERC-20 on Monad)</label>
-          <div class="row">
-            <input id="tokenAddr" class="input" placeholder="0x..." autocomplete="off" />
-            <button class="btn btn--ghost" id="btnPaste">Paste</button>
+        <!-- TOKEN -->
+        <div class="liq-box">
+          <div class="token-row">
+            <button id="liq_token_btn" class="token-btn">
+              <span class="token-dot"></span>
+              <span id="liq_token_symbol">Select token</span>
+              <svg viewBox="0 0 24 24" class="chev"><path d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <span class="muted mini">Token amount</span>
           </div>
+          <input id="liq_token_amount" class="amount-input" type="number" placeholder="0.0" />
+        </div>
 
-          <div class="row row--tight">
-            <button class="btn btn--primary" id="btnLoadToken">Load token</button>
-            <button class="btn" id="btnCreatePool">Create Pool</button>
+      </div>
+
+      <div class="actions">
+        <button id="liq_supply_btn" class="btn primary">Supply</button>
+        <div id="liq_status" class="status"></div>
+      </div>
+
+      <!-- Token Picker Liquidity -->
+      <div id="picker_liq" class="picker hide">
+        <div class="picker-card">
+          <div class="picker-head">
+            <h3>Select a token</h3>
+            <button class="picker-close" data-close="#picker_liq">×</button>
           </div>
-
-          <div class="sep"></div>
-
-          <div class="kvs">
-            <div class="kv">
-              <div class="kv__k">Token</div>
-              <div class="kv__v" id="tokenMeta">-</div>
-            </div>
-            <div class="kv">
-              <div class="kv__k">Pair (Token/WMON)</div>
-              <div class="kv__v mono" id="pairAddr">-</div>
-            </div>
-            <div class="kv">
-              <div class="kv__k">Reserves</div>
-              <div class="kv__v" id="reserves">-</div>
-            </div>
-            <div class="kv">
-              <div class="kv__k">Your LP Balance</div>
-              <div class="kv__v" id="lpBal">-</div>
-            </div>
-          </div>
-
-          <div class="sep"></div>
-
-          <div class="recent">
-            <div class="recent__title">Recent tokens</div>
-            <div class="recent__list" id="recentList"></div>
-          </div>
+          <input id="picker_liq_search" class="picker-search" placeholder="Search or paste token address" />
+          <ul id="picker_liq_list" class="picker-list"></ul>
         </div>
       </div>
 
-      <!-- RIGHT: TABS -->
-      <div class="card">
-        <div class="tabs">
-          <button class="tab tab--active" data-tab="swap">Swap</button>
-          <button class="tab" data-tab="liq">Liquidity</button>
-        </div>
+    </div>
 
-        <!-- SWAP -->
-        <div class="tabpane tabpane--active" id="tab-swap">
-          <div class="card__header">
-            <div class="card__title">Swap</div>
-            <div class="card__hint">Direct 1-hop swaps using existing pools.</div>
-          </div>
-
-          <div class="swapbox">
-            <div class="swaprow">
-              <div class="swaprow__top">
-                <div class="swaprow__label">You pay</div>
-                <div class="swaprow__asset" id="payAsset">MON</div>
-              </div>
-              <div class="swaprow__main">
-                <input class="input input--big" id="swapIn" placeholder="0.0" inputmode="decimal" />
-                <button class="btn btn--ghost btn--mini" id="btnFlip">Flip</button>
-              </div>
-            </div>
-
-            <div class="swapmid">
-              <div class="swapmid__line"></div>
-              <div class="swapmid__pill">↓</div>
-              <div class="swapmid__line"></div>
-            </div>
-
-            <div class="swaprow">
-              <div class="swaprow__top">
-                <div class="swaprow__label">You receive (est.)</div>
-                <div class="swaprow__asset" id="recvAsset">TOKEN</div>
-              </div>
-              <div class="swaprow__main">
-                <input class="input input--big" id="swapOut" placeholder="0.0" inputmode="decimal" disabled />
-              </div>
-            </div>
-
-            <div class="row row--tight">
-              <div class="field">
-                <label class="label">Slippage (%)</label>
-                <input class="input" id="slippage" value="1" inputmode="decimal" />
-              </div>
-              <div class="field">
-                <label class="label">Deadline (minutes)</label>
-                <input class="input" id="deadline" value="20" inputmode="numeric" />
-              </div>
-            </div>
-
-            <div class="kvs kvs--small">
-              <div class="kv">
-                <div class="kv__k">Min received</div>
-                <div class="kv__v" id="minOut">-</div>
-              </div>
-              <div class="kv">
-                <div class="kv__k">Price impact (rough)</div>
-                <div class="kv__v" id="impact">-</div>
-              </div>
-            </div>
-
-            <button class="btn btn--primary btn--full" id="btnSwap">Swap</button>
-            <div class="msg" id="swapMsg"></div>
-          </div>
-        </div>
-
-        <!-- LIQUIDITY -->
-        <div class="tabpane" id="tab-liq">
-          <div class="card__header">
-            <div class="card__title">Liquidity</div>
-            <div class="card__hint">Add or remove liquidity for Token/MON pools.</div>
-          </div>
-
-          <div class="liqgrid">
-            <div class="liqcard">
-              <div class="liqcard__title">Add Liquidity</div>
-
-              <label class="label">Token amount</label>
-              <input class="input" id="addTokenAmt" placeholder="0.0" inputmode="decimal" />
-
-              <label class="label">MON amount</label>
-              <input class="input" id="addMonAmt" placeholder="0.0" inputmode="decimal" />
-
-              <div class="row row--tight">
-                <div class="field">
-                  <label class="label">Token min</label>
-                  <input class="input" id="addTokenMin" placeholder="0.0" inputmode="decimal" />
-                </div>
-                <div class="field">
-                  <label class="label">MON min</label>
-                  <input class="input" id="addMonMin" placeholder="0.0" inputmode="decimal" />
-                </div>
-              </div>
-
-              <button class="btn btn--primary btn--full" id="btnAddLiq">Add Liquidity</button>
-              <div class="msg" id="addMsg"></div>
-            </div>
-
-            <div class="liqcard">
-              <div class="liqcard__title">Remove Liquidity</div>
-
-              <label class="label">LP amount</label>
-              <input class="input" id="remLpAmt" placeholder="0.0" inputmode="decimal" />
-
-              <div class="row row--tight">
-                <div class="field">
-                  <label class="label">Token out min</label>
-                  <input class="input" id="remTokenMin" placeholder="0.0" inputmode="decimal" />
-                </div>
-                <div class="field">
-                  <label class="label">MON out min</label>
-                  <input class="input" id="remMonMin" placeholder="0.0" inputmode="decimal" />
-                </div>
-              </div>
-
-              <button class="btn btn--primary btn--full" id="btnRemoveLiq">Remove Liquidity</button>
-              <div class="msg" id="remMsg"></div>
-            </div>
-          </div>
-
-          <div class="note">
-            Tip: If the pool doesn't exist yet, click <b>Create Pool</b> first, then add liquidity.
-          </div>
-        </div>
+    <!-- Positions -->
+    <div class="subcard">
+      <h3>Your Positions</h3>
+      <div id="positions_list" class="pool-list">
+        <div class="muted">No positions yet.</div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <footer class="footer">
-      <div class="footer__left">
-        <span class="mono">Factory:</span> <span class="mono" id="factoryAddrSmall">-</span>
-      </div>
-      <div class="footer__right">
-        <span class="mono">Router:</span> <span class="mono" id="routerAddrSmall">-</span>
-      </div>
-    </footer>
-  </main>
+  <!-- ========== POOLS ========== -->
+  <section id="pools" class="view-section card">
+    <div class="card-header">
+      <h2>Pools</h2>
+      <p class="sub">All available liquidity pools on MonadDex.</p>
+    </div>
+
+    <div id="pools_list" class="pool-list">
+      <div class="muted">No pools found.</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="vx-footer">
+  <div class="vx-container">
+    <span>© <span id="year"></span> MonadDex</span>
+    <a href="#" target="_blank">Docs</a>
+    <a href="#" target="_blank">GitHub</a>
+    <a href="#" target="_blank">Explorer</a>
+  </div>
+</footer>
+
+<!-- Toast -->
+<div id="toast" class="toast"></div>
+
 </body>
 </html>

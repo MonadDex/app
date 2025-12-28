@@ -1,229 +1,300 @@
-/* ===============================
-   GLOBAL
-================================ */
+/* =====================================================
+   MonadDex - Style
+   Clean, minimal, mobile-first (VicDex inspired)
+===================================================== */
+
+:root {
+  --bg: #0b0f14;
+  --bg-card: #121826;
+  --bg-soft: #1a2233;
+
+  --text: #e6e8ee;
+  --text-soft: #9aa4bf;
+
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+
+  --border: #24304a;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+/* ================= RESET ================= */
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-body {
-  background: #0b0e14;
-  color: #e5e7eb;
-  min-height: 100vh;
+html, body {
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100%;
 }
 
-/* ===============================
-   HEADER
-================================ */
+/* ================= GLOBAL ================= */
+
+a {
+  color: var(--text-soft);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--text);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  outline: none;
+}
+
+input {
+  font-family: inherit;
+  outline: none;
+}
+
+/* ================= HEADER ================= */
+
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  border-bottom: 1px solid #1f2937;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .logo {
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
 }
 
-.title {
-  font-size: 20px;
+.brand {
+  font-size: 18px;
   font-weight: 700;
-}
-
-.subtitle {
-  font-size: 12px;
-  color: #9ca3af;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.wallet-info {
+.network {
   font-size: 13px;
-  background: #111827;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--text-soft);
 }
 
-.hidden {
-  display: none;
+/* ================= BUTTONS ================= */
+
+.btn {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s ease;
 }
 
-/* ===============================
-   NAV
-================================ */
+.btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.btn.primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn.full {
+  width: 100%;
+}
+
+.token-btn {
+  padding: 8px 12px;
+  background: var(--bg-soft);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ================= NAV ================= */
+
 .nav {
   display: flex;
-  gap: 10px;
-  padding: 12px 24px;
-  border-bottom: 1px solid #1f2937;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
 }
 
 .nav-btn {
+  padding: 8px 16px;
+  border-radius: 999px;
   background: transparent;
-  border: 1px solid #1f2937;
-  color: #9ca3af;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
+  color: var(--text-soft);
+  font-weight: 600;
 }
 
 .nav-btn.active {
-  background: #1f2937;
-  color: #ffffff;
+  background: var(--bg-soft);
+  color: var(--text);
 }
 
-/* ===============================
-   MAIN
-================================ */
-.main {
-  max-width: 520px;
-  margin: 30px auto;
-  padding: 0 16px;
+/* ================= MAIN ================= */
+
+.container {
+  max-width: 420px;
+  margin: 24px auto;
+  padding: 0 12px;
 }
 
-.panel {
+.tab {
   display: none;
 }
 
-.panel.active {
+.tab.active {
   display: block;
 }
 
-.panel h2 {
-  font-size: 22px;
-  margin-bottom: 6px;
-}
+/* ================= CARD ================= */
 
-.panel-desc {
-  font-size: 13px;
-  color: #9ca3af;
-  margin-bottom: 18px;
-}
-
-/* ===============================
-   CARD
-================================ */
 .card {
-  background: #111827;
-  border: 1px solid #1f2937;
-  border-radius: 14px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
   padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
 }
 
-.token-box {
+.card h2 {
+  font-size: 16px;
   margin-bottom: 14px;
 }
 
-.token-box label {
-  font-size: 12px;
-  color: #9ca3af;
-  margin-bottom: 6px;
+/* ================= INPUT GROUP ================= */
+
+.input-group {
+  margin-bottom: 14px;
+}
+
+.input-group label {
   display: block;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 6px;
 }
 
 .token-row {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
 }
 
-input,
-select {
+.token-row input {
   flex: 1;
-  padding: 10px;
-  background: #020617;
-  border: 1px solid #1f2937;
-  color: #ffffff;
-  border-radius: 8px;
-  font-size: 14px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 16px;
 }
 
-input:disabled {
-  opacity: 0.6;
+.token-row input::placeholder {
+  color: var(--text-soft);
 }
+
+/* ================= SWAP ================= */
 
 .swap-arrow {
   text-align: center;
   font-size: 22px;
-  margin: 8px 0;
-  color: #9ca3af;
+  margin: 6px 0 10px;
+  color: var(--text-soft);
 }
 
-/* ===============================
-   BUTTONS
-================================ */
-.btn {
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  border: none;
-  font-size: 14px;
-  cursor: pointer;
-  margin-top: 8px;
-}
-
-.btn.primary {
-  background: #2563eb;
-  color: #ffffff;
-}
-
-.btn.secondary {
-  background: #374151;
-  color: #ffffff;
-}
-
-.btn.danger {
-  background: #7f1d1d;
-  color: #ffffff;
-}
-
-/* ===============================
-   TABLE
-================================ */
-.pool-table {
-  width: 100%;
-  border-collapse: collapse;
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 12px;
 }
 
-.pool-table th,
-.pool-table td {
-  padding: 10px;
-  border-bottom: 1px solid #1f2937;
-  text-align: left;
+.info-row input {
+  width: 70px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  color: var(--text);
+  text-align: right;
 }
 
-.pool-table th {
-  color: #9ca3af;
-  font-weight: 600;
-}
+/* ================= LIQUIDITY ================= */
 
-.muted {
-  color: #6b7280;
+.plus {
   text-align: center;
+  font-size: 18px;
+  color: var(--text-soft);
+  margin-bottom: 8px;
 }
 
-/* ===============================
-   FOOTER
-================================ */
+/* ================= LIST ================= */
+
+.list {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.list.empty {
+  text-align: center;
+  color: var(--text-soft);
+  padding: 12px;
+}
+
+/* ================= FOOTER ================= */
+
 .footer {
-  text-align: center;
-  padding: 30px 12px;
-  font-size: 12px;
-  color: #9ca3af;
+  border-top: 1px solid var(--border);
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+
+.footer-links {
+  display: flex;
+  gap: 14px;
+}
+
+/* ================= DESKTOP ================= */
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 460px;
+  }
+
+  .header {
+    padding: 16px 32px;
+  }
+
+  .footer {
+    padding: 16px 32px;
+  }
 }

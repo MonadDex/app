@@ -1,22 +1,13 @@
-/* ======================================================
-   MonadDex Frontend – app.js
-   ABI EMBEDDED VERSION (NO IMPORTS)
-   Network: Monad (ChainId 143)
-====================================================== */
-
-/* ================= CONFIG ================= */
 const CONFIG = {
   chainId: 143,
   chainHex: "0x8f",
   rpc: "https://rpc.monad.xyz",
   factory: "0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6",
-  router:  "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E",
-  wmon:    "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"
+  router: "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E",
+  wmon: "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"
 };
 
-/* ================= ABI ================= */
-
-// ---------- Factory ----------
+/* ===== ABI ===== */
 const FACTORY_ABI = [
   "function allPairs(uint256) view returns (address)",
   "function allPairsLength() view returns (uint256)",
@@ -24,228 +15,135 @@ const FACTORY_ABI = [
   "function createPair(address,address) returns (address)"
 ];
 
-// ---------- Router ----------
 const ROUTER_ABI = [
-  "function addLiquidityMON(address,uint256,uint256,uint256,address,uint256) payable returns (uint256,uint256,uint256)",
-  "function removeLiquidityMON(address,uint256,uint256,uint256,address,uint256) returns (uint256,uint256)",
-  "function swapExactMONForTokens(uint256,address,address,uint256) payable returns (uint256)",
-  "function swapExactTokensForMON(uint256,uint256,address,address,uint256) returns (uint256)"
+  "function addLiquidityMON(address,uint256,uint256,uint256,address,uint256) payable",
+  "function swapExactMONForTokens(uint256,address,address,uint256) payable",
+  "function swapExactTokensForMON(uint256,uint256,address,address,uint256)"
 ];
 
-// ---------- ERC20 ----------
 const ERC20_ABI = [
   "function symbol() view returns (string)",
-  "function decimals() view returns (uint8)",
-  "function balanceOf(address) view returns (uint256)",
-  "function approve(address,uint256) returns (bool)",
+  "function approve(address,uint256)",
   "function allowance(address,address) view returns (uint256)"
 ];
 
-/* ================= GLOBALS ================= */
-let provider, signer, account;
-let router, factory;
+let provider, signer, account, router, factory;
+let swapFrom = "MON", swapTo = null, liqToken = null;
 
-let swapFrom = "MON";
-let swapTo   = null;
-let liqToken = null;
-
-/* ================= HELPERS ================= */
 const $ = id => document.getElementById(id);
 
-function toast(msg, ok = true) {
-  const t = $("toast");
-  t.textContent = msg;
-  t.style.background = ok ? "#22c55e" : "#ef4444";
+function toast(msg, ok=true){
+  const t=$("toast"); t.innerText=msg;
+  t.style.background=ok?"#22c55e":"#ef4444";
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+  setTimeout(()=>t.classList.remove("show"),3000);
 }
 
-function deadline() {
-  return Math.floor(Date.now() / 1000) + 1200;
-}
+async function connectWallet(){
+  if(!window.ethereum) return alert("MetaMask required");
+  await ethereum.request({method:"eth_requestAccounts"});
+  provider=new ethers.BrowserProvider(ethereum);
+  signer=await provider.getSigner();
+  account=await signer.getAddress();
 
-function isAddress(v) {
-  try { return ethers.getAddress(v); }
-  catch { return null; }
-}
-
-/* ================= WALLET ================= */
-async function connectWallet() {
-  if (!window.ethereum) return alert("MetaMask not found");
-
-  await ethereum.request({ method: "eth_requestAccounts" });
-  provider = new ethers.BrowserProvider(window.ethereum);
-  signer = await provider.getSigner();
-  account = await signer.getAddress();
-
-  const net = await provider.getNetwork();
-  if (Number(net.chainId) !== CONFIG.chainId) {
+  const net=await provider.getNetwork();
+  if(Number(net.chainId)!==CONFIG.chainId){
     await ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [{
-        chainId: CONFIG.chainHex,
-        chainName: "Monad",
-        rpcUrls: [CONFIG.rpc],
-        nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }
+      method:"wallet_addEthereumChain",
+      params:[{
+        chainId:CONFIG.chainHex,
+        chainName:"Monad",
+        rpcUrls:[CONFIG.rpc],
+        nativeCurrency:{name:"MON",symbol:"MON",decimals:18}
       }]
     });
   }
 
-  router  = new ethers.Contract(CONFIG.router,  ROUTER_ABI,  signer);
-  factory = new ethers.Contract(CONFIG.factory, FACTORY_ABI, signer);
-
-  $("connectBtn").textContent =
-    account.slice(0, 6) + "..." + account.slice(-4);
-
-  toast("Wallet connected");
+  router=new ethers.Contract(CONFIG.router,ROUTER_ABI,signer);
+  factory=new ethers.Contract(CONFIG.factory,FACTORY_ABI,signer);
+  $("connectBtn").innerText=account.slice(0,6)+"..."+account.slice(-4);
   loadPools();
 }
 
-/* ================= TOKEN RESOLVE ================= */
-async function resolveToken(input) {
-  if (input === "MON") {
-    return { address: CONFIG.wmon, symbol: "MON", isNative: true };
-  }
-
-  const addr = isAddress(input);
-  if (!addr) throw "Invalid token";
-
-  const erc20 = new ethers.Contract(addr, ERC20_ABI, signer);
-  return {
-    address: addr,
-    symbol: await erc20.symbol(),
-    erc20,
-    isNative: false
-  };
+function deadline(){
+  return Math.floor(Date.now()/1000)+1200;
 }
 
-/* ================= SWAP ================= */
-async function swap() {
-  try {
-    const amount = $("swap_from_amount").value;
-    if (!amount) return;
-
-    const from = await resolveToken(swapFrom);
-    const to   = await resolveToken(swapTo);
-
-    if (from.isNative) {
-      await router.swapExactMONForTokens(
-        0,
-        to.address,
-        account,
-        deadline(),
-        { value: ethers.parseEther(amount) }
-      );
-    } else {
-      const value = ethers.parseEther(amount);
-      const allowance = await from.erc20.allowance(account, CONFIG.router);
-      if (allowance < value) {
-        await from.erc20.approve(CONFIG.router, ethers.MaxUint256);
-      }
-
-      await router.swapExactTokensForMON(
-        value,
-        0,
-        from.address,
-        account,
-        deadline()
-      );
-    }
-
-    toast("Swap successful");
-  } catch (e) {
-    toast(e.message || e, false);
-  }
+async function resolveToken(v){
+  if(v==="MON") return {isNative:true,address:CONFIG.wmon,symbol:"MON"};
+  const a=ethers.getAddress(v);
+  const c=new ethers.Contract(a,ERC20_ABI,signer);
+  return {isNative:false,address:a,symbol:await c.symbol(),erc20:c};
 }
 
-/* ================= LIQUIDITY ================= */
-async function supplyLiquidity() {
-  try {
-    const token = await resolveToken(liqToken);
-    const monAmt = $("liq_mon_amount").value;
-    const tokAmt = $("liq_token_amount").value;
+async function swap(){
+  if(!swapTo) return toast("Select token",false);
+  const amt=$("swap_from_amount").value;
+  if(!amt) return;
 
-    const tokenValue = ethers.parseEther(tokAmt);
-    const monValue   = ethers.parseEther(monAmt);
+  const from=await resolveToken(swapFrom);
+  const to=await resolveToken(swapTo);
 
-    const allowance = await token.erc20.allowance(account, CONFIG.router);
-    if (allowance < tokenValue) {
-      await token.erc20.approve(CONFIG.router, ethers.MaxUint256);
-    }
-
-    await router.addLiquidityMON(
-      token.address,
-      tokenValue,
-      0,
-      0,
-      account,
-      deadline(),
-      { value: monValue }
+  if(from.isNative){
+    await router.swapExactMONForTokens(
+      0,to.address,account,deadline(),
+      {value:ethers.parseEther(amt)}
     );
+  }else{
+    const v=ethers.parseEther(amt);
+    const al=await from.erc20.allowance(account,CONFIG.router);
+    if(al<v) await from.erc20.approve(CONFIG.router,ethers.MaxUint256);
+    await router.swapExactTokensForMON(
+      v,0,from.address,account,deadline()
+    );
+  }
+  toast("Swap success");
+}
 
-    toast("Liquidity added");
-  } catch (e) {
-    toast(e.message || e, false);
+async function supply(){
+  const t=await resolveToken(liqToken);
+  const ta=ethers.parseEther($("liq_token_amount").value);
+  const ma=ethers.parseEther($("liq_mon_amount").value);
+  const al=await t.erc20.allowance(account,CONFIG.router);
+  if(al<ta) await t.erc20.approve(CONFIG.router,ethers.MaxUint256);
+  await router.addLiquidityMON(
+    t.address,ta,0,0,account,deadline(),{value:ma}
+  );
+  toast("Liquidity added");
+}
+
+async function loadPools(){
+  const n=await factory.allPairsLength();
+  const box=$("pools_list"); box.innerHTML="";
+  if(n===0n) return box.innerText="No pools";
+  for(let i=0;i<n;i++){
+    const p=await factory.allPairs(i);
+    const d=document.createElement("div");
+    d.innerText=p; box.appendChild(d);
   }
 }
 
-/* ================= POOLS ================= */
-async function loadPools() {
-  const box = $("pools_list");
-  box.innerHTML = "";
+/* ===== EVENTS ===== */
+$("connectBtn").onclick=connectWallet;
+$("switchNetworkBtn").onclick=connectWallet;
+$("swap_execute_btn").onclick=swap;
+$("liq_supply_btn").onclick=supply;
 
-  const len = await factory.allPairsLength();
-  if (len === 0n) {
-    box.innerHTML = "<div class='muted'>No pools found</div>";
-    return;
-  }
+$("swap_flip_btn").onclick=()=>{
+  if(!swapTo) return;
+  [swapFrom,swapTo]=[swapTo,swapFrom];
+  [$("swap_from_symbol").innerText,$("swap_to_symbol").innerText]=
+  [$("swap_to_symbol").innerText,$("swap_from_symbol").innerText];
+};
 
-  for (let i = 0; i < len; i++) {
-    const pair = await factory.allPairs(i);
-    const div = document.createElement("div");
-    div.className = "subcard";
-    div.innerHTML = `<div class="muted">${pair}</div>`;
-    box.appendChild(div);
-  }
-}
+$("picker_from_search").onchange=e=>{
+  swapFrom=e.target.value; $("swap_from_symbol").innerText=e.target.value;
+};
+$("picker_to_search").onchange=e=>{
+  swapTo=e.target.value; $("swap_to_symbol").innerText=e.target.value;
+};
+$("picker_liq_search").onchange=e=>{
+  liqToken=e.target.value; $("liq_token_symbol").innerText=e.target.value;
+};
 
-/* ================= PICKERS ================= */
-async function pickToken(value, type) {
-  try {
-    const t = await resolveToken(value);
-    if (type === "from") {
-      swapFrom = value;
-      $("swap_from_symbol").textContent = t.symbol;
-    }
-    if (type === "to") {
-      swapTo = value;
-      $("swap_to_symbol").textContent = t.symbol;
-    }
-    if (type === "liq") {
-      liqToken = value;
-      $("liq_token_symbol").textContent = t.symbol;
-    }
-  } catch {
-    toast("Invalid token", false);
-  }
-}
-
-/* ================= EVENTS ================= */
-$("connectBtn").onclick = connectWallet;
-$("swap_execute_btn").onclick = swap;
-$("liq_supply_btn").onclick = supplyLiquidity;
-
-$("picker_from_search").onchange = e => pickToken(e.target.value, "from");
-$("picker_to_search").onchange   = e => pickToken(e.target.value, "to");
-$("picker_liq_search").onchange  = e => pickToken(e.target.value, "liq");
-
-document.querySelectorAll(".picker-close").forEach(b => {
-  b.onclick = () => document.querySelector(b.dataset.close).classList.add("hide");
-});
-
-$("swap_from_token_btn").onclick = () => $("picker_from").classList.remove("hide");
-$("swap_to_token_btn").onclick   = () => $("picker_to").classList.remove("hide");
-$("liq_token_btn").onclick       = () => $("picker_liq").classList.remove("hide");
-
-/* ================= INIT ================= */
-$("year").textContent = new Date().getFullYear();
+$("year").innerText=new Date().getFullYear();

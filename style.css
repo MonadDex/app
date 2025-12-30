@@ -1,19 +1,18 @@
 /* =====================================================
-   MonadDex - Clean & Professional UI
-   Responsive / Mobile Friendly
+   MonadDex - Clean AMM UI
+   Professional • Simple • Mobile Friendly
 ===================================================== */
 
 :root {
   --bg: #0b0f19;
   --panel: #0f172a;
-  --panel-2: #121a33;
   --border: rgba(255,255,255,0.08);
   --text: #ffffff;
   --muted: rgba(255,255,255,0.65);
   --primary: #4f8cff;
   --primary-dark: #2f6bff;
-  --danger: #ff4d4d;
   --success: #3ddc97;
+  --danger: #ff4d4d;
   --radius: 14px;
 }
 
@@ -28,21 +27,20 @@ html, body {
 
 body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-  background: radial-gradient(900px 600px at 20% 10%, rgba(79,140,255,.18), transparent 60%),
-              radial-gradient(900px 600px at 90% 20%, rgba(61,220,151,.12), transparent 55%),
-              var(--bg);
+  background:
+    radial-gradient(900px 600px at 20% 10%, rgba(79,140,255,.18), transparent 60%),
+    radial-gradient(900px 600px at 90% 20%, rgba(61,220,151,.12), transparent 55%),
+    var(--bg);
   color: var(--text);
 }
 
-/* =====================================================
-   HEADER
-===================================================== */
+/* ================= HEADER ================= */
 
 .header {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(11,15,25,.7);
+  background: rgba(11,15,25,.75);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   padding: 14px 18px;
@@ -64,8 +62,8 @@ body {
 }
 
 .brand-name {
-  font-weight: 800;
   font-size: 18px;
+  font-weight: 800;
 }
 
 .brand-sub {
@@ -75,8 +73,8 @@ body {
 
 .header-right {
   display: flex;
-  align-items: center;
   gap: 10px;
+  align-items: center;
   flex-wrap: wrap;
 }
 
@@ -89,15 +87,13 @@ body {
   color: var(--muted);
 }
 
-/* =====================================================
-   BUTTONS
-===================================================== */
+/* ================= BUTTON ================= */
 
 .btn {
   border: 1px solid var(--border);
   background: rgba(255,255,255,.05);
   color: var(--text);
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius);
   cursor: pointer;
   font-weight: 700;
@@ -122,9 +118,7 @@ body {
   margin-top: 14px;
 }
 
-/* =====================================================
-   NAV MENU
-===================================================== */
+/* ================= NAV ================= */
 
 .nav {
   display: flex;
@@ -143,7 +137,6 @@ body {
   color: var(--muted);
   font-weight: 800;
   cursor: pointer;
-  transition: all .15s ease;
 }
 
 .nav-btn:hover {
@@ -156,9 +149,7 @@ body {
   border-color: rgba(79,140,255,.5);
 }
 
-/* =====================================================
-   MAIN LAYOUT
-===================================================== */
+/* ================= MAIN ================= */
 
 .container {
   max-width: 960px;
@@ -180,12 +171,10 @@ body {
   font-weight: 900;
 }
 
-/* =====================================================
-   CARD / FORM
-===================================================== */
+/* ================= CARD & FORM ================= */
 
 .card {
-  background: linear-gradient(180deg, rgba(15,23,42,.9), rgba(15,23,42,.8));
+  background: linear-gradient(180deg, rgba(15,23,42,.92), rgba(15,23,42,.82));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 18px;
@@ -207,14 +196,14 @@ body {
   outline: none;
 }
 
-.input:focus {
-  border-color: rgba(79,140,255,.6);
-  box-shadow: 0 0 0 3px rgba(79,140,255,.15);
-}
-
 .input.large {
   font-size: 18px;
   font-weight: 800;
+}
+
+.input:focus {
+  border-color: rgba(79,140,255,.6);
+  box-shadow: 0 0 0 3px rgba(79,140,255,.15);
 }
 
 .divider {
@@ -223,20 +212,7 @@ body {
   margin: 16px 0;
 }
 
-/* =====================================================
-   SWAP
-===================================================== */
-
-.swap-arrow {
-  text-align: center;
-  font-size: 22px;
-  margin: 8px 0;
-  color: var(--muted);
-}
-
-/* =====================================================
-   STATUS
-===================================================== */
+/* ================= STATUS ================= */
 
 .status {
   margin-top: 12px;
@@ -253,9 +229,7 @@ body {
   color: var(--danger);
 }
 
-/* =====================================================
-   POOLS
-===================================================== */
+/* ================= POOLS ================= */
 
 .pools-list {
   display: grid;
@@ -279,9 +253,7 @@ body {
   margin-top: 4px;
 }
 
-/* =====================================================
-   FOOTER
-===================================================== */
+/* ================= FOOTER ================= */
 
 .footer {
   margin-top: 30px;
@@ -292,9 +264,7 @@ body {
   border-top: 1px solid var(--border);
 }
 
-/* =====================================================
-   MOBILE
-===================================================== */
+/* ================= MOBILE ================= */
 
 @media (max-width: 640px) {
   .header {

@@ -1,113 +1,474 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>MonadDex</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Permissionless MON ↔ Token AMM on Monad. Swap, add/remove liquidity, and explore pools." />
 
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+  <link rel="icon" href="logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="./style.css" />
+
+  <!-- Ethers v5 (stable for browser dApps) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"
+          integrity="sha384-8zZb3m5wWjR7K7mQZlJ7c8w4a8mK9mG7Qf0i8zv6E0lP2kM0nZ1s7d7mGm6v0k9J"
+          crossorigin="anonymous"></script>
 </head>
 
 <body>
+  <!-- ===== Top Bar ===== -->
+  <header class="topbar">
+    <div class="topbar__inner container">
+      <div class="brand" id="goHomeBtn" role="button" tabindex="0" aria-label="Go to home">
+        <img class="brand__logo" src="logo.png" alt="MonadDex logo" />
+        <div class="brand__text">
+          <div class="brand__name">MonadDex</div>
+          <div class="brand__sub">Swap · Liquidity · Pools</div>
+        </div>
+      </div>
 
-<!-- ================= HEADER ================= -->
-<div class="header">
-  <div class="header-left">
-    <img src="logo.png" class="logo" />
-    <div>
-      <div class="brand-name">MonadDex</div>
-      <div class="brand-sub">Simple AMM on Monad</div>
+      <div class="topbar__right">
+        <div class="netpill" id="netPill" title="Network status">
+          <span class="dot" id="netDot"></span>
+          <span class="netpill__text" id="netText">Not connected</span>
+        </div>
+
+        <button class="btn btn--ghost" id="btnAddTokenModal" type="button">
+          + Add Token
+        </button>
+
+        <button class="btn btn--primary" id="btnConnect" type="button">
+          Connect Wallet
+        </button>
+
+        <div class="walletpill" id="walletPill" hidden>
+          <div class="walletpill__addr" id="walletAddressShort">0x…</div>
+          <button class="btn btn--ghost btn--sm" id="btnDisconnect" type="button">Disconnect</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav container" aria-label="Primary navigation">
+    <button class="nav__item is-active" id="tabSwap" type="button">Swap</button>
+    <button class="nav__item" id="tabLiquidity" type="button">Liquidity</button>
+    <button class="nav__item" id="tabPools" type="button">Pools</button>
+  </nav>
+
+  <!-- ===== Main ===== -->
+  <main class="container main">
+    <!-- ===== Alerts / Status ===== -->
+    <section class="status" aria-live="polite">
+      <div class="status__box" id="statusBox" hidden>
+        <div class="status__title" id="statusTitle">Status</div>
+        <div class="status__msg" id="statusMsg">—</div>
+      </div>
+    </section>
+
+    <!-- ===== SWAP ===== -->
+    <section class="panel" id="viewSwap">
+      <div class="panel__header">
+        <div>
+          <h1 class="panel__title">Swap</h1>
+          <p class="panel__subtitle">
+            Swap between <b>MON</b> and any token on Monad. One side is always MON.
+          </p>
+        </div>
+
+        <div class="panel__meta">
+          <div class="mini">
+            <div class="mini__label">MON Balance</div>
+            <div class="mini__value" id="balMon">—</div>
+          </div>
+          <div class="mini">
+            <div class="mini__label">Token Balance</div>
+            <div class="mini__value" id="balToken">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card grid2">
+        <!-- Left: Swap Form -->
+        <div class="card__body">
+          <div class="field">
+            <label class="label">Token</label>
+            <div class="row">
+              <select class="select" id="swapTokenSelect" aria-label="Select token"></select>
+              <button class="btn btn--ghost" id="btnSwapRefreshToken" type="button" title="Refresh token data">↻</button>
+            </div>
+            <div class="help" id="swapTokenHelp">
+              Add tokens using <b>+ Add Token</b> if you don’t see it.
+            </div>
+          </div>
+
+          <div class="swapbox">
+            <div class="swaprow">
+              <div class="swaprow__left">
+                <div class="swaprow__label">You pay</div>
+                <input class="input input--xl" id="swapAmountIn" inputmode="decimal" placeholder="0.0" />
+                <div class="swaprow__asset">
+                  <span class="chip chip--dark">MON</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="swapmid">
+              <button class="iconbtn" id="btnSwapFlip" type="button" title="Flip direction" aria-label="Flip direction">
+                ⇅
+              </button>
+              <div class="swapmid__hint" id="swapDirectionHint">MON → TOKEN</div>
+            </div>
+
+            <div class="swaprow">
+              <div class="swaprow__left">
+                <div class="swaprow__label">You receive (estimated)</div>
+                <input class="input input--xl" id="swapAmountOut" inputmode="decimal" placeholder="0.0" disabled />
+                <div class="swaprow__asset">
+                  <span class="chip" id="swapOutChip">TOKEN</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid2 gap">
+            <div class="field">
+              <label class="label">Slippage</label>
+              <div class="row">
+                <button class="seg" data-slip="0.5" type="button">0.5%</button>
+                <button class="seg is-active" data-slip="1" type="button">1%</button>
+                <button class="seg" data-slip="2" type="button">2%</button>
+                <input class="input" id="swapSlippageCustom" placeholder="Custom %" inputmode="decimal" />
+              </div>
+              <div class="help">Used to set minimum received.</div>
+            </div>
+
+            <div class="field">
+              <label class="label">Deadline</label>
+              <div class="row">
+                <input class="input" id="swapDeadlineMins" inputmode="numeric" value="20" />
+                <span class="unit">minutes</span>
+              </div>
+              <div class="help">Transaction will revert if delayed too long.</div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="summary">
+            <div class="summary__row">
+              <span>Pair</span>
+              <span class="mono" id="swapPairAddr">—</span>
+            </div>
+            <div class="summary__row">
+              <span>Reserves</span>
+              <span class="mono" id="swapReserves">—</span>
+            </div>
+            <div class="summary__row">
+              <span>Price (approx)</span>
+              <span class="mono" id="swapPrice">—</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn--ghost" id="btnSwapQuote" type="button">Quote</button>
+            <button class="btn btn--primary" id="btnSwap" type="button">Swap</button>
+          </div>
+
+          <div class="tiny muted">
+            Tip: If the pool doesn’t exist yet, create it first in <b>Liquidity</b>.
+          </div>
+        </div>
+
+        <!-- Right: How it works -->
+        <aside class="card__side">
+          <div class="sidebox">
+            <div class="sidebox__title">How swap works</div>
+            <ul class="list">
+              <li>One side is always <b>MON</b> (wrapped to WMON under the hood).</li>
+              <li>Swap uses the existing pool reserves for pricing.</li>
+              <li>If the pool is empty or missing, you must add liquidity first.</li>
+            </ul>
+            <div class="sidebox__title">Safety</div>
+            <ul class="list">
+              <li>Always verify token contracts before trading.</li>
+              <li>Start with small amounts for new tokens.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== LIQUIDITY ===== -->
+    <section class="panel" id="viewLiquidity" hidden>
+      <div class="panel__header">
+        <div>
+          <h1 class="panel__title">Liquidity</h1>
+          <p class="panel__subtitle">
+            Create a pool or add/remove liquidity for <b>Token/MON</b>.
+          </p>
+        </div>
+
+        <div class="panel__meta">
+          <div class="mini">
+            <div class="mini__label">Your LP Balance</div>
+            <div class="mini__value" id="lpBalance">—</div>
+          </div>
+          <div class="mini">
+            <div class="mini__label">Your Share</div>
+            <div class="mini__value" id="lpShare">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card grid2">
+        <div class="card__body">
+          <div class="field">
+            <label class="label">Token</label>
+            <div class="row">
+              <select class="select" id="liqTokenSelect" aria-label="Select token"></select>
+              <button class="btn btn--ghost" id="btnLiqRefreshToken" type="button" title="Refresh token data">↻</button>
+            </div>
+          </div>
+
+          <div class="grid2 gap">
+            <div class="field">
+              <label class="label">Token amount</label>
+              <input class="input" id="liqTokenAmount" inputmode="decimal" placeholder="0.0" />
+            </div>
+            <div class="field">
+              <label class="label">MON amount</label>
+              <input class="input" id="liqMonAmount" inputmode="decimal" placeholder="0.0" />
+            </div>
+          </div>
+
+          <div class="grid2 gap">
+            <div class="field">
+              <label class="label">Min token (slippage)</label>
+              <input class="input" id="liqTokenMin" inputmode="decimal" placeholder="0.0" />
+              <div class="help">Optional. Leave blank to auto-calc using slippage.</div>
+            </div>
+            <div class="field">
+              <label class="label">Min MON (slippage)</label>
+              <input class="input" id="liqMonMin" inputmode="decimal" placeholder="0.0" />
+              <div class="help">Optional. Leave blank to auto-calc using slippage.</div>
+            </div>
+          </div>
+
+          <div class="grid2 gap">
+            <div class="field">
+              <label class="label">Slippage</label>
+              <div class="row">
+                <button class="seg" data-slip="0.5" type="button">0.5%</button>
+                <button class="seg is-active" data-slip="1" type="button">1%</button>
+                <button class="seg" data-slip="2" type="button">2%</button>
+                <input class="input" id="liqSlippageCustom" placeholder="Custom %" inputmode="decimal" />
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="label">Deadline</label>
+              <div class="row">
+                <input class="input" id="liqDeadlineMins" inputmode="numeric" value="20" />
+                <span class="unit">minutes</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="summary">
+            <div class="summary__row">
+              <span>Pair</span>
+              <span class="mono" id="liqPairAddr">—</span>
+            </div>
+            <div class="summary__row">
+              <span>Reserves</span>
+              <span class="mono" id="liqReserves">—</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn--ghost" id="btnCheckPair" type="button">Check / Load Pair</button>
+            <button class="btn btn--ghost" id="btnApproveToken" type="button">Approve Token</button>
+            <button class="btn btn--primary" id="btnAddLiquidity" type="button">Add Liquidity</button>
+          </div>
+
+          <div class="divider"></div>
+
+          <h3 class="sectiontitle">Remove Liquidity</h3>
+
+          <div class="grid2 gap">
+            <div class="field">
+              <label class="label">LP amount</label>
+              <input class="input" id="removeLpAmount" inputmode="decimal" placeholder="0.0" />
+              <div class="help">Enter how many LP tokens to burn.</div>
+            </div>
+
+            <div class="field">
+              <label class="label">Min received (optional)</label>
+              <div class="row">
+                <input class="input" id="removeTokenMin" inputmode="decimal" placeholder="Token min" />
+                <input class="input" id="removeMonMin" inputmode="decimal" placeholder="MON min" />
+              </div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn btn--ghost" id="btnApproveLP" type="button">Approve LP</button>
+            <button class="btn btn--danger" id="btnRemoveLiquidity" type="button">Remove Liquidity</button>
+          </div>
+
+          <div class="tiny muted">
+            Note: LP is the Pair token contract. Approve is required before removing.
+          </div>
+        </div>
+
+        <aside class="card__side">
+          <div class="sidebox">
+            <div class="sidebox__title">First time creating a pool</div>
+            <ol class="list list--numbered">
+              <li>Select a token (or add token contract first).</li>
+              <li>Enter token + MON amounts.</li>
+              <li>Click <b>Approve Token</b> once.</li>
+              <li>Click <b>Add Liquidity</b>. The pool will be created automatically if missing.</li>
+            </ol>
+
+            <div class="sidebox__title">LP tokens</div>
+            <ul class="list">
+              <li>LP tokens represent your share of the pool.</li>
+              <li>Remove Liquidity burns LP and returns Token + MON.</li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ===== POOLS ===== -->
+    <section class="panel" id="viewPools" hidden>
+      <div class="panel__header">
+        <div>
+          <h1 class="panel__title">Pools</h1>
+          <p class="panel__subtitle">
+            Discover existing Token/MON pools and jump into Swap or Liquidity management.
+          </p>
+        </div>
+
+        <div class="panel__meta">
+          <button class="btn btn--ghost" id="btnPoolsRefresh" type="button">Refresh</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__body">
+          <div class="row row--space">
+            <div class="field field--grow">
+              <label class="label">Search by token address / symbol</label>
+              <input class="input" id="poolsSearch" placeholder="e.g. 0xabc… or MYTOKEN" />
+            </div>
+            <div class="field">
+              <label class="label">Show</label>
+              <select class="select" id="poolsFilter">
+                <option value="all">All pools</option>
+                <option value="saved">Saved tokens only</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="table" role="table" aria-label="Pools table">
+            <div class="table__head" role="row">
+              <div class="th" role="columnheader">Token</div>
+              <div class="th" role="columnheader">Pair</div>
+              <div class="th" role="columnheader">Reserves</div>
+              <div class="th" role="columnheader">Actions</div>
+            </div>
+
+            <div class="table__body" id="poolsList" role="rowgroup">
+              <!-- rows injected by app.js -->
+              <div class="empty" id="poolsEmpty">
+                No pools loaded yet. Click <b>Refresh</b>.
+              </div>
+            </div>
+          </div>
+
+          <div class="tiny muted">
+            Pools are read from the Factory contract. New tokens may need to be added manually first.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+      <div class="footer__inner">
+        <div class="muted">
+          MonadDex — permissionless AMM on Monad.
+        </div>
+        <div class="footer__links">
+          <a href="#" id="linkFactory" target="_blank" rel="noreferrer">Factory</a>
+          <a href="#" id="linkRouter" target="_blank" rel="noreferrer">Router</a>
+          <a href="#" id="linkWMON" target="_blank" rel="noreferrer">WMON</a>
+          <a href="#" id="linkRPC" target="_blank" rel="noreferrer">RPC</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ===== Add Token Modal ===== -->
+  <div class="modal" id="tokenModal" hidden>
+    <div class="modal__backdrop" id="tokenModalBackdrop"></div>
+    <div class="modal__card" role="dialog" aria-modal="true" aria-labelledby="tokenModalTitle">
+      <div class="modal__head">
+        <div>
+          <div class="modal__title" id="tokenModalTitle">Add Token</div>
+          <div class="modal__subtitle">Paste a Monad token contract address to load it.</div>
+        </div>
+        <button class="iconbtn" id="btnCloseTokenModal" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="field">
+          <label class="label">Token contract address</label>
+          <input class="input mono" id="tokenAddressInput" placeholder="0x..." />
+          <div class="help">
+            The dApp will read <b>name</b>, <b>symbol</b>, and <b>decimals</b> from chain.
+          </div>
+        </div>
+
+        <div class="preview" id="tokenPreview" hidden>
+          <div class="preview__row">
+            <span class="muted">Name</span>
+            <span class="mono" id="prevName">—</span>
+          </div>
+          <div class="preview__row">
+            <span class="muted">Symbol</span>
+            <span class="mono" id="prevSymbol">—</span>
+          </div>
+          <div class="preview__row">
+            <span class="muted">Decimals</span>
+            <span class="mono" id="prevDecimals">—</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn--ghost" id="btnLoadToken" type="button">Load Token</button>
+          <button class="btn btn--primary" id="btnSaveToken" type="button" disabled>Save</button>
+        </div>
+
+        <div class="tiny muted">
+          Saved tokens are stored in your browser (localStorage).
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="header-right">
-    <div id="networkChip" class="chip">Network: -</div>
-    <div id="walletChip" class="chip">Wallet: Not connected</div>
-    <button id="btnConnect" class="btn primary">Connect Wallet</button>
-  </div>
-</div>
-
-<!-- ================= NAV ================= -->
-<div class="nav">
-  <button class="nav-btn active" data-view="swapView">Swap</button>
-  <button class="nav-btn" data-view="liquidityView">Add Liquidity</button>
-  <button class="nav-btn" data-view="poolsView">Pools</button>
-</div>
-
-<!-- ================= MAIN ================= -->
-<div class="container">
-
-  <!-- ========== SWAP ========== -->
-  <div id="swapView" class="view active">
-    <div class="view-title">Swap MON → Token</div>
-
-    <div class="card">
-      <div class="label">Token address</div>
-      <input id="swapTokenAddress" class="input" placeholder="0x..." />
-
-      <div class="label">MON amount</div>
-      <input id="swapMonIn" class="input large" placeholder="0.0" />
-
-      <button id="btnSwap" class="btn primary full">Swap</button>
-
-      <div id="swapStatus" class="status"></div>
-    </div>
-  </div>
-
-  <!-- ========== ADD LIQUIDITY ========== -->
-  <div id="liquidityView" class="view">
-    <div class="view-title">Add Liquidity (Token + MON)</div>
-
-    <div class="card">
-
-      <!-- Token load -->
-      <div class="label">Token address</div>
-      <input id="liqTokenAddress" class="input" placeholder="0x..." />
-      <button id="btnLoadToken" class="btn full">Load Token</button>
-
-      <!-- Token info -->
-      <div id="tokenInfo" class="status"></div>
-
-      <div class="divider"></div>
-
-      <!-- Pool status -->
-      <div id="poolStatus" class="status"></div>
-      <button id="btnCreatePool" class="btn full" style="display:none">
-        Create Pool
-      </button>
-
-      <div class="divider"></div>
-
-      <!-- Amounts -->
-      <div class="label">Token amount</div>
-      <input id="liqTokenAmount" class="input large" placeholder="0.0" />
-
-      <div class="label">MON amount</div>
-      <input id="liqMonAmount" class="input large" placeholder="0.0" />
-
-      <button id="btnAddLiquidity" class="btn primary full">
-        Add Liquidity
-      </button>
-
-      <div id="liqStatus" class="status"></div>
-    </div>
-  </div>
-
-  <!-- ========== POOLS ========== -->
-  <div id="poolsView" class="view">
-    <div class="view-title">Liquidity Pools</div>
-
-    <div id="poolsList" class="pools-list"></div>
-  </div>
-
-</div>
-
-<!-- ================= FOOTER ================= -->
-<div class="footer">
-  MonadDex · Permissionless AMM on Monad
-</div>
-
-<script src="app.js"></script>
+  <!-- App -->
+  <script src="./app.js"></script>
 </body>
 </html>

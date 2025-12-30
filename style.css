@@ -1,558 +1,198 @@
-/* =========================================================
-   MonadDex – Global Styles
-   ========================================================= */
-
-:root {
-  --bg: #0b0e14;
-  --panel: #121723;
-  --card: #161c2f;
-  --muted: #8b93a7;
-  --text: #e6e9f0;
-  --primary: #4da3ff;
-  --primary-2: #2f80ed;
-  --danger: #ff5c5c;
-  --border: #242b45;
-  --chip: #1e2540;
-  --success: #2ecc71;
-}
+/* ===============================
+   GLOBAL
+================================ */
 
 * {
   box-sizing: border-box;
 }
 
-html,
 body {
   margin: 0;
-  padding: 0;
-  background: linear-gradient(180deg, #0b0e14 0%, #0e1322 100%);
-  color: var(--text);
-  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, Ubuntu, sans-serif;
-  font-size: 15px;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #0b0e14;
+  color: #eaeaea;
 }
 
-/* =========================================================
-   Layout
-   ========================================================= */
+h2 {
+  margin-top: 0;
+}
+
+label {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 14px;
+  color: #cfd3ff;
+}
+
+/* ===============================
+   LAYOUT
+================================ */
 
 .container {
-  width: 100%;
-  max-width: 1180px;
-  padding: 0 16px;
+  max-width: 520px;
   margin: 0 auto;
+  padding: 14px;
 }
 
 .main {
-  padding-bottom: 80px;
+  padding-bottom: 60px;
 }
 
-.grid2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-.gap {
-  gap: 12px;
-}
-
-@media (max-width: 900px) {
-  .grid2 {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* =========================================================
-   Topbar
-   ========================================================= */
+/* ===============================
+   HEADER
+================================ */
 
 .topbar {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(11, 14, 20, 0.85);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid #1f243a;
+  background: #0b0e14;
 }
 
 .topbar__inner {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  height: 64px;
+  align-items: center;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
+  gap: 8px;
 }
 
 .brand__logo {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
 }
 
 .brand__name {
-  font-weight: 700;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.brand__sub {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.topbar__right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* =========================================================
-   Pills
-   ========================================================= */
-
-.netpill,
-.walletpill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  background: var(--chip);
-  border-radius: 999px;
-  font-size: 13px;
-}
-
-.netpill .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #666;
-}
-
-.netpill.connected .dot {
-  background: var(--success);
-}
-
-.walletpill__addr {
-  font-family: monospace;
-}
-
-/* =========================================================
-   Buttons
-   ========================================================= */
+/* ===============================
+   BUTTONS
+================================ */
 
 .btn {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  padding: 8px 14px;
-  border-radius: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
-  font-weight: 500;
-  transition: 0.15s;
-}
-
-.btn:hover {
-  border-color: var(--primary);
+  font-size: 14px;
 }
 
 .btn--primary {
-  background: linear-gradient(
-    180deg,
-    var(--primary),
-    var(--primary-2)
-  );
-  border: none;
+  background: #3f7cff;
   color: #fff;
-}
-
-.btn--primary:hover {
-  opacity: 0.9;
-}
-
-.btn--ghost {
-  background: transparent;
 }
 
 .btn--danger {
-  background: var(--danger);
-  border: none;
+  background: #d9534f;
   color: #fff;
 }
 
-.btn--sm {
-  padding: 5px 10px;
+.btn:active {
+  opacity: 0.85;
+}
+
+/* ===============================
+   WALLET
+================================ */
+
+.walletpill {
+  background: #1c2140;
+  padding: 6px 10px;
+  border-radius: 20px;
   font-size: 13px;
 }
 
-.iconbtn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--chip);
-  border: 1px solid var(--border);
-  color: var(--text);
-  cursor: pointer;
-}
-
-/* =========================================================
-   Navigation Tabs
-   ========================================================= */
+/* ===============================
+   NAV
+================================ */
 
 .nav {
   display: flex;
-  gap: 10px;
-  margin: 16px auto;
+  gap: 6px;
+  margin-top: 12px;
 }
 
 .nav__item {
   flex: 1;
-  padding: 12px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  padding: 10px;
+  background: #161a33;
+  border-radius: 10px;
+  border: none;
+  color: #cfd3ff;
   cursor: pointer;
-  font-weight: 600;
+  font-size: 14px;
 }
 
 .nav__item.is-active {
-  background: var(--card);
-  border-color: var(--primary);
+  background: #3f7cff;
+  color: #fff;
 }
 
-/* =========================================================
-   Panels & Cards
-   ========================================================= */
-
-.panel {
-  margin-top: 12px;
-}
-
-.panel__header {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 12px;
-}
-
-.panel__title {
-  margin: 0;
-  font-size: 20px;
-}
-
-.panel__subtitle {
-  margin: 4px 0 0;
-  color: var(--muted);
-  font-size: 14px;
-}
-
-.panel__meta {
-  display: flex;
-  gap: 12px;
-}
+/* ===============================
+   CARDS
+================================ */
 
 .card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  background: #141833;
+  border-radius: 12px;
+  margin-top: 14px;
 }
 
 .card__body {
-  padding: 16px;
+  padding: 14px;
 }
 
-.card__side {
-  padding: 16px;
-  border-left: 1px solid var(--border);
-}
+/* ===============================
+   INPUTS
+================================ */
 
-@media (max-width: 900px) {
-  .card__side {
-    border-left: none;
-    border-top: 1px solid var(--border);
-  }
-}
-
-/* =========================================================
-   Forms
-   ========================================================= */
-
-.field {
-  margin-bottom: 12px;
-}
-
-.field--grow {
-  flex: 1;
-}
-
-.label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.input,
-.select {
+.input {
   width: 100%;
-  padding: 10px 12px;
-  background: #0e1322;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
-  font-size: 14px;
-}
-
-.input--xl {
-  font-size: 20px;
-  font-weight: 600;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  background: #0f132b;
+  color: #fff;
 }
 
 .input:disabled {
   opacity: 0.6;
 }
 
-.row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
+/* ===============================
+   POOLS LIST
+================================ */
+
+#poolsList {
+  margin-top: 10px;
+  font-size: 14px;
 }
 
-.row--space {
-  justify-content: space-between;
-}
-
-.unit {
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.help {
-  font-size: 12px;
-  color: var(--muted);
-  margin-top: 4px;
-}
-
-.muted {
-  color: var(--muted);
-}
-
-.mono {
+.pool-row {
+  padding: 8px;
+  border-bottom: 1px solid #1f243a;
   font-family: monospace;
 }
 
-/* =========================================================
-   Swap Box
-   ========================================================= */
+/* ===============================
+   MOBILE
+================================ */
 
-.swapbox {
-  background: var(--card);
-  border-radius: 14px;
-  padding: 14px;
-  margin: 10px 0;
-}
+@media (max-width: 480px) {
+  .container {
+    padding: 10px;
+  }
 
-.swaprow {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
+  .btn {
+    width: 100%;
+  }
 
-.swaprow__label {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.swaprow__asset {
-  margin-top: 6px;
-}
-
-.swapmid {
-  text-align: center;
-  margin: 10px 0;
-}
-
-.swapmid__hint {
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.chip {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: var(--chip);
-  font-size: 12px;
-}
-
-.chip--dark {
-  background: #0e1322;
-}
-
-/* =========================================================
-   Segments
-   ========================================================= */
-
-.seg {
-  padding: 6px 10px;
-  border-radius: 8px;
-  background: var(--chip);
-  border: 1px solid var(--border);
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.seg.is-active {
-  border-color: var(--primary);
-}
-
-/* =========================================================
-   Summary
-   ========================================================= */
-
-.summary {
-  margin: 10px 0;
-}
-
-.summary__row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  margin: 4px 0;
-}
-
-/* =========================================================
-   Tables
-   ========================================================= */
-
-.table {
-  width: 100%;
-}
-
-.table__head,
-.table__row {
-  display: grid;
-  grid-template-columns: 1.2fr 1.6fr 1.2fr 1fr;
-  gap: 8px;
-  padding: 10px 0;
-}
-
-.th {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.table__body .table__row {
-  border-top: 1px solid var(--border);
-}
-
-.empty {
-  padding: 20px;
-  text-align: center;
-  color: var(--muted);
-}
-
-/* =========================================================
-   Footer
-   ========================================================= */
-
-.footer {
-  margin-top: 40px;
-  padding: 20px 0;
-  border-top: 1px solid var(--border);
-}
-
-.footer__inner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.footer__links a {
-  margin-left: 12px;
-  color: var(--muted);
-  font-size: 13px;
-  text-decoration: none;
-}
-
-/* =========================================================
-   Modal
-   ========================================================= */
-
-.modal {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-}
-
-.modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.modal__card {
-  position: relative;
-  max-width: 420px;
-  margin: 10vh auto;
-  background: var(--panel);
-  border-radius: 16px;
-  border: 1px solid var(--border);
-  padding: 16px;
-}
-
-.modal__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.modal__title {
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.modal__subtitle {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.preview {
-  background: var(--card);
-  border-radius: 12px;
-  padding: 10px;
-  margin: 10px 0;
-}
-
-.preview__row {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-}
-
-/* =========================================================
-   Utilities
-   ========================================================= */
-
-.divider {
-  height: 1px;
-  background: var(--border);
-  margin: 12px 0;
-}
-
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 12px;
-}
-
-.tiny {
-  font-size: 12px;
+  .nav {
+    flex-direction: column;
+  }
 }

@@ -1,14 +1,13 @@
 /* =====================================================
    MonadDex - app.js
-   Simple • Professional • Permissionless
+   Correct AMM flow:
+   Load Token → Check Pool → Create Pool → Add Liquidity
    ethers.js v5.7.2
 ===================================================== */
 
 "use strict";
 
-/* =========================
-   CONFIG
-========================= */
+/* ================= CONFIG ================= */
 
 const CHAIN_ID = 143;
 const RPC_URL = "https://rpc.monad.xyz";
@@ -17,20 +16,18 @@ const FACTORY_ADDRESS = "0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6";
 const ROUTER_ADDRESS  = "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E";
 const WMON_ADDRESS    = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
 
-/* =========================
-   ABIs (minimal)
-========================= */
+/* ================= ABIs ================= */
 
 const FACTORY_ABI = [
+  "function getPair(address,address) view returns (address)",
   "function allPairsLength() view returns (uint)",
-  "function allPairs(uint) view returns (address)",
-  "function getPair(address,address) view returns (address)"
+  "function allPairs(uint) view returns (address)"
 ];
 
 const ROUTER_ABI = [
   "function createPool(address token) returns (address)",
-  "function addLiquidityMON(address token,uint amountTokenDesired,uint amountTokenMin,uint amountMONMin,address to,uint deadline) payable returns (uint,uint,uint)",
-  "function swapExactMONForTokens(uint amountOutMin,address tokenOut,address to,uint deadline) payable returns (uint)",
+  "function addLiquidityMON(address token,uint amountTokenDesired,uint amountTokenMin,uint amountMONMin,address to,uint deadline) payable",
+  "function swapExactMONForTokens(uint amountOutMin,address tokenOut,address to,uint deadline) payable"
 ];
 
 const ERC20_ABI = [
@@ -43,31 +40,26 @@ const ERC20_ABI = [
 ];
 
 const PAIR_ABI = [
-  "function getReserves() view returns (uint112,uint112)",
   "function token0() view returns (address)",
-  "function token1() view returns (address)"
+  "function token1() view returns (address)",
+  "function getReserves() view returns (uint112,uint112)"
 ];
 
-/* =========================
-   GLOBAL STATE
-========================= */
+/* ================= GLOBAL ================= */
 
 let provider, signer, account;
 let factory, router;
 
-let currentToken = null;
-let currentTokenInfo = null;
-let currentPair = null;
+let tokenAddress = null;
+let tokenContract = null;
+let tokenInfo = null;
+let pairAddress = null;
 
-/* =========================
-   DOM HELPERS
-========================= */
+/* ================= HELPERS ================= */
 
 const $ = id => document.getElementById(id);
 
-function shortAddr(a) {
-  return a ? a.slice(0,6) + "..." + a.slice(-4) : "-";
-}
+const short = a => a ? a.slice(0,6) + "..." + a.slice(-4) : "-";
 
 function setStatus(id, msg, type) {
   const el = $(id);
@@ -77,13 +69,11 @@ function setStatus(id, msg, type) {
   el.textContent = msg;
 }
 
-/* =========================
-   INIT PROVIDER
-========================= */
+/* ================= PROVIDERS ================= */
 
 function initReadProvider() {
   provider = new ethers.providers.JsonRpcProvider(RPC_URL);
-  factory  = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
+  factory = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 }
 
 function initWriteProvider() {
@@ -92,94 +82,166 @@ function initWriteProvider() {
   router = new ethers.Contract(ROUTER_ADDRESS, ROUTER_ABI, signer);
 }
 
-/* =========================
-   WALLET
-========================= */
+/* ================= WALLET ================= */
 
 async function connectWallet() {
-  if (!window.ethereum) {
-    alert("Wallet not found");
-    return;
-  }
+  if (!window.ethereum) return alert("Wallet not found");
 
-  const chainId = await ethereum.request({ method: "eth_chainId" });
-  if (parseInt(chainId,16) !== CHAIN_ID) {
-    alert("Please switch to Monad network");
-    return;
+  const cid = await ethereum.request({ method: "eth_chainId" });
+  if (parseInt(cid,16) !== CHAIN_ID) {
+    return alert("Please switch to Monad network");
   }
 
   initWriteProvider();
-  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
-  account = accounts[0];
+  const accs = await ethereum.request({ method: "eth_requestAccounts" });
+  account = accs[0];
 
-  $("walletChip").textContent = "Wallet: " + shortAddr(account);
+  $("walletChip").textContent = "Wallet: " + short(account);
 }
 
-/* =========================
-   NAVIGATION
-========================= */
+/* ================= NAV ================= */
 
-function initNavigation() {
-  document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.onclick = () => {
-      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+function initNav() {
+  document.querySelectorAll(".nav-btn").forEach(b => {
+    b.onclick = () => {
+      document.querySelectorAll(".nav-btn").forEach(x => x.classList.remove("active"));
       document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
-      btn.classList.add("active");
-      $(btn.dataset.view).classList.add("active");
+      b.classList.add("active");
+      $(b.dataset.view).classList.add("active");
     };
   });
 }
 
-/* =========================
-   TOKEN LOAD
-========================= */
+/* ================= LOAD TOKEN ================= */
 
-async function loadToken(addr) {
-  if (!ethers.utils.isAddress(addr)) throw "Invalid token address";
+async function loadToken() {
+  try {
+    setStatus("tokenInfo","",null);
+    setStatus("poolStatus","",null);
 
-  const token = new ethers.Contract(addr, ERC20_ABI, provider);
-  const [name, symbol, decimals] = await Promise.all([
-    token.name(),
-    token.symbol(),
-    token.decimals()
-  ]);
+    const addr = $("liqTokenAddress").value.trim();
+    if (!ethers.utils.isAddress(addr)) throw "Invalid token address";
 
-  currentToken = addr;
-  currentTokenInfo = { name, symbol, decimals };
+    tokenAddress = addr;
+    tokenContract = new ethers.Contract(addr, ERC20_ABI, provider);
 
-  return token;
+    const [name,symbol,decimals] = await Promise.all([
+      tokenContract.name(),
+      tokenContract.symbol(),
+      tokenContract.decimals()
+    ]);
+
+    tokenInfo = { name, symbol, decimals };
+
+    setStatus(
+      "tokenInfo",
+      `Token loaded: ${symbol} (decimals ${decimals})`,
+      "success"
+    );
+
+    await checkPool();
+
+  } catch(e) {
+    setStatus("tokenInfo", e.toString(), "error");
+  }
 }
 
-/* =========================
-   SWAP
-========================= */
+/* ================= CHECK / CREATE POOL ================= */
+
+async function checkPool() {
+  pairAddress = await factory.getPair(tokenAddress, WMON_ADDRESS);
+
+  if (pairAddress === ethers.constants.AddressZero) {
+    setStatus("poolStatus","Pool not created yet","error");
+    $("btnCreatePool").style.display = "block";
+  } else {
+    setStatus("poolStatus","Pool exists: " + short(pairAddress),"success");
+    $("btnCreatePool").style.display = "none";
+  }
+}
+
+async function createPool() {
+  try {
+    initWriteProvider();
+    setStatus("poolStatus","Creating pool...","");
+
+    const tx = await router.createPool(tokenAddress);
+    await tx.wait();
+
+    await checkPool();
+
+  } catch(e) {
+    setStatus("poolStatus", e.toString(), "error");
+  }
+}
+
+/* ================= ADD LIQUIDITY ================= */
+
+async function addLiquidity() {
+  try {
+    if (!tokenInfo) throw "Load token first";
+    if (pairAddress === ethers.constants.AddressZero) {
+      throw "Create pool first";
+    }
+
+    const tokenAmt = $("liqTokenAmount").value.trim();
+    const monAmt   = $("liqMonAmount").value.trim();
+    if (!tokenAmt || !monAmt) throw "Missing amount";
+
+    initWriteProvider();
+
+    const amtToken = ethers.utils.parseUnits(tokenAmt, tokenInfo.decimals);
+    const amtMON   = ethers.utils.parseEther(monAmt);
+
+    const allowance = await tokenContract.allowance(account, ROUTER_ADDRESS);
+    if (allowance.lt(amtToken)) {
+      const txA = await tokenContract.connect(signer)
+        .approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
+      await txA.wait();
+    }
+
+    setStatus("liqStatus","Adding liquidity...","");
+
+    const tx = await router.addLiquidityMON(
+      tokenAddress,
+      amtToken,
+      0,
+      0,
+      account,
+      Math.floor(Date.now()/1000)+1200,
+      { value: amtMON }
+    );
+
+    setStatus("liqStatus","Tx sent: " + tx.hash,"");
+    await tx.wait();
+    setStatus("liqStatus","Liquidity added successfully","success");
+
+  } catch(e) {
+    setStatus("liqStatus", e.toString(), "error");
+  }
+}
+
+/* ================= SWAP ================= */
 
 async function doSwap() {
   try {
-    setStatus("swapStatus","",null);
-
-    const tokenAddr = $("swapTokenAddress").value.trim();
+    const addr = $("swapTokenAddress").value.trim();
     const monIn = $("swapMonIn").value.trim();
-    if (!tokenAddr || !monIn) throw "Missing input";
+    if (!addr || !monIn) throw "Missing input";
 
-    await loadToken(tokenAddr);
-
-    const pair = await factory.getPair(tokenAddr, WMON_ADDRESS);
+    const pair = await factory.getPair(addr, WMON_ADDRESS);
     if (pair === ethers.constants.AddressZero) {
-      setStatus("swapStatus","Pool not exist. Create liquidity first.","error");
-      return;
+      throw "Pool not exist";
     }
 
-    const amountIn = ethers.utils.parseEther(monIn);
-
-    setStatus("swapStatus","Swapping...","");
+    initWriteProvider();
 
     const tx = await router.swapExactMONForTokens(
       0,
-      tokenAddr,
+      addr,
       account,
       Math.floor(Date.now()/1000)+1200,
-      { value: amountIn }
+      { value: ethers.utils.parseEther(monIn) }
     );
 
     setStatus("swapStatus","Tx sent: "+tx.hash,"");
@@ -187,60 +249,11 @@ async function doSwap() {
     setStatus("swapStatus","Swap success","success");
 
   } catch(e) {
-    setStatus("swapStatus", e.toString(),"error");
+    setStatus("swapStatus", e.toString(), "error");
   }
 }
 
-/* =========================
-   ADD LIQUIDITY
-========================= */
-
-async function addLiquidity() {
-  try {
-    setStatus("liqStatus","",null);
-
-    const tokenAddr = $("liqTokenAddress").value.trim();
-    const tokenAmt = $("liqTokenAmount").value.trim();
-    const monAmt = $("liqMonAmount").value.trim();
-
-    if (!tokenAddr || !tokenAmt || !monAmt) throw "Missing input";
-
-    const token = await loadToken(tokenAddr);
-    initWriteProvider();
-
-    const amountToken = ethers.utils.parseUnits(tokenAmt, currentTokenInfo.decimals);
-    const amountMON   = ethers.utils.parseEther(monAmt);
-
-    const allowance = await token.allowance(account, ROUTER_ADDRESS);
-    if (allowance.lt(amountToken)) {
-      const txA = await token.connect(signer).approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
-      await txA.wait();
-    }
-
-    setStatus("liqStatus","Adding liquidity...","");
-
-    const tx = await router.addLiquidityMON(
-      tokenAddr,
-      amountToken,
-      0,
-      0,
-      account,
-      Math.floor(Date.now()/1000)+1200,
-      { value: amountMON }
-    );
-
-    setStatus("liqStatus","Tx sent: "+tx.hash,"");
-    await tx.wait();
-    setStatus("liqStatus","Liquidity added","success");
-
-  } catch(e) {
-    setStatus("liqStatus", e.toString(),"error");
-  }
-}
-
-/* =========================
-   POOLS
-========================= */
+/* ================= POOLS ================= */
 
 async function loadPools() {
   const list = $("poolsList");
@@ -248,42 +261,36 @@ async function loadPools() {
 
   const len = await factory.allPairsLength();
   for (let i=0;i<len;i++) {
-    const pairAddr = await factory.allPairs(i);
-    const pair = new ethers.Contract(pairAddr, PAIR_ABI, provider);
-
+    const p = await factory.allPairs(i);
+    const pair = new ethers.Contract(p, PAIR_ABI, provider);
     const [r0,r1] = await pair.getReserves();
-    const t0 = await pair.token0();
-    const t1 = await pair.token1();
 
     const div = document.createElement("div");
     div.className = "pool-item";
     div.innerHTML = `
-      <div class="pool-item-title">${shortAddr(t0)} / ${shortAddr(t1)}</div>
+      <div class="pool-item-title">${short(p)}</div>
       <div class="pool-item-sub">Reserve0: ${ethers.utils.formatEther(r0)}</div>
       <div class="pool-item-sub">Reserve1: ${ethers.utils.formatEther(r1)}</div>
-      <div class="pool-item-sub">Pair: ${shortAddr(pairAddr)}</div>
     `;
     list.appendChild(div);
   }
 }
 
-/* =========================
-   INIT
-========================= */
+/* ================= INIT ================= */
 
-async function init() {
+function init() {
   initReadProvider();
-  initNavigation();
-
-  $("btnConnect").onclick = connectWallet;
-  $("btnSwap").onclick = doSwap;
-  $("btnAddLiquidity").onclick = addLiquidity;
-
-  document.querySelector('[data-view="poolsView"]').onclick = async () => {
-    await loadPools();
-  };
+  initNav();
 
   $("networkChip").textContent = "Network: Monad";
+
+  $("btnConnect").onclick = connectWallet;
+  $("btnLoadToken").onclick = loadToken;
+  $("btnCreatePool").onclick = createPool;
+  $("btnAddLiquidity").onclick = addLiquidity;
+  $("btnSwap").onclick = doSwap;
+
+  document.querySelector('[data-view="poolsView"]').onclick = loadPools;
 }
 
 document.addEventListener("DOMContentLoaded", init);

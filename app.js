@@ -15,9 +15,9 @@
   const RPC_URL = "https://rpc.monad.xyz";
 
   // === IMPORTANT: replace by YOUR deployed addresses ===
-  const FACTORY_ADDRESS = "0xFACTORY_ADDRESS";
-  const ROUTER_ADDRESS = "0xROUTER_ADDRESS";
-  const WMON_ADDRESS = "0xWMON_ADDRESS";
+  const FACTORY_ADDRESS = "0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6";
+  const ROUTER_ADDRESS = "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E";
+  const WMON_ADDRESS = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
 
   /* =========================
      ABIs (embedded)

@@ -1,6 +1,6 @@
-/* ===============================
+/* =========================
    GLOBAL
-================================ */
+========================= */
 
 * {
   box-sizing: border-box;
@@ -13,20 +13,26 @@ body {
   color: #eaeaea;
 }
 
-h2 {
+h2, h3 {
   margin-top: 0;
 }
 
-label {
-  display: block;
-  margin: 10px 0 4px;
-  font-size: 14px;
-  color: #cfd3ff;
+p {
+  margin: 6px 0 12px;
 }
 
-/* ===============================
+.muted {
+  color: #9aa0ff;
+  font-size: 14px;
+}
+
+.mono {
+  font-family: monospace;
+}
+
+/* =========================
    LAYOUT
-================================ */
+========================= */
 
 .container {
   max-width: 520px;
@@ -38,13 +44,17 @@ label {
   padding-bottom: 60px;
 }
 
-/* ===============================
+.view {
+  margin-top: 14px;
+}
+
+/* =========================
    HEADER
-================================ */
+========================= */
 
 .topbar {
-  border-bottom: 1px solid #1f243a;
   background: #0b0e14;
+  border-bottom: 1px solid #1f243a;
 }
 
 .topbar__inner {
@@ -69,9 +79,9 @@ label {
   font-weight: bold;
 }
 
-/* ===============================
+/* =========================
    BUTTONS
-================================ */
+========================= */
 
 .btn {
   padding: 10px 14px;
@@ -95,9 +105,9 @@ label {
   opacity: 0.85;
 }
 
-/* ===============================
+/* =========================
    WALLET
-================================ */
+========================= */
 
 .walletpill {
   background: #1c2140;
@@ -106,9 +116,9 @@ label {
   font-size: 13px;
 }
 
-/* ===============================
+/* =========================
    NAV
-================================ */
+========================= */
 
 .nav {
   display: flex;
@@ -132,23 +142,29 @@ label {
   color: #fff;
 }
 
-/* ===============================
+/* =========================
    CARDS
-================================ */
+========================= */
 
 .card {
   background: #141833;
   border-radius: 12px;
-  margin-top: 14px;
 }
 
 .card__body {
   padding: 14px;
 }
 
-/* ===============================
-   INPUTS
-================================ */
+/* =========================
+   FORM
+========================= */
+
+label {
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
 
 .input {
   width: 100%;
@@ -164,12 +180,36 @@ label {
   opacity: 0.6;
 }
 
-/* ===============================
-   POOLS LIST
-================================ */
+select.input {
+  appearance: none;
+}
+
+.row {
+  display: flex;
+  gap: 6px;
+}
+
+/* =========================
+   STATUS / HR
+========================= */
+
+.status {
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+hr {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid #1f243a;
+}
+
+/* =========================
+   POOLS
+========================= */
 
 #poolsList {
-  margin-top: 10px;
+  margin-top: 12px;
   font-size: 14px;
 }
 
@@ -179,9 +219,9 @@ label {
   font-family: monospace;
 }
 
-/* ===============================
+/* =========================
    MOBILE
-================================ */
+========================= */
 
 @media (max-width: 480px) {
   .container {
@@ -190,6 +230,10 @@ label {
 
   .btn {
     width: 100%;
+  }
+
+  .row {
+    flex-direction: column;
   }
 
   .nav {

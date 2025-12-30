@@ -5,6 +5,9 @@
   <title>MonadDex</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+  <meta name="description" content="MonadDex — Simple swaps on Monad. Create pools, provide liquidity, and swap MON ↔ Token." />
+  <meta name="theme-color" content="#0b0e14" />
+
   <link rel="icon" href="logo.png" />
   <link rel="stylesheet" href="./style.css" />
 
@@ -17,18 +20,21 @@
 <!-- ================= HEADER ================= -->
 <header class="topbar">
   <div class="container topbar__inner">
+
     <div class="brand">
       <img src="logo.png" class="brand__logo" />
       <span class="brand__name">MonadDex</span>
     </div>
 
-    <button id="btnConnect" class="btn btn--primary">
-      Connect Wallet
-    </button>
-
-    <div id="walletPill" class="walletpill" hidden>
-      <span id="walletAddressShort"></span>
+    <div class="header-actions">
+      <button id="btnConnect" class="btn btn--primary">
+        Connect Wallet
+      </button>
+      <div id="walletPill" class="walletpill" hidden>
+        <span id="walletAddressShort"></span>
+      </div>
     </div>
+
   </div>
 </header>
 
@@ -43,78 +49,96 @@
 <main class="container main">
 
 <!-- ================= SWAP ================= -->
-<section id="viewSwap">
-  <h2>Swap</h2>
+<section id="viewSwap" class="card view">
+  <div class="card__body">
 
-  <div class="card">
-    <div class="card__body">
+    <h2>Swap</h2>
+    <p class="muted">Swap between MON and tokens that already have liquidity.</p>
 
-      <label>Token address</label>
-      <input id="swapTokenAddress" class="input" placeholder="0x..." />
-
-      <label>MON amount</label>
-      <input id="swapMonAmount" class="input" placeholder="0.0" />
-
-      <label>Token amount (estimated)</label>
-      <input id="swapTokenOut" class="input" disabled />
-
-      <button id="btnSwap" class="btn btn--primary">
-        Swap MON → Token
-      </button>
-
+    <!-- FROM -->
+    <label>From</label>
+    <div class="row">
+      <input class="input" value="MON" disabled />
+      <input id="swapFromAmount" class="input" placeholder="0.0" />
     </div>
+
+    <!-- TO -->
+    <label>To</label>
+    <select id="swapTokenSelect" class="input">
+      <option value="">Select token</option>
+    </select>
+
+    <label>Estimated output</label>
+    <input id="swapToAmount" class="input" disabled />
+
+    <button id="btnSwap" class="btn btn--primary">
+      Swap
+    </button>
+
+    <div id="swapStatus" class="status"></div>
+
   </div>
 </section>
 
 <!-- ================= LIQUIDITY ================= -->
-<section id="viewLiquidity" hidden>
-  <h2>Liquidity</h2>
+<section id="viewLiquidity" class="card view" hidden>
+  <div class="card__body">
 
-  <div class="card">
-    <div class="card__body">
+    <h2>Liquidity</h2>
+    <p class="muted">Create pool or add/remove liquidity (MON ↔ Token).</p>
 
-      <label>Token address</label>
-      <input id="liqTokenAddress" class="input" placeholder="0x..." />
-
-      <label>Token amount</label>
-      <input id="liqTokenAmount" class="input" placeholder="0.0" />
-
-      <label>MON amount</label>
-      <input id="liqMonAmount" class="input" placeholder="0.0" />
-
-      <button id="btnAddLiquidity" class="btn btn--primary">
-        Add Liquidity
+    <!-- STEP 1: TOKEN -->
+    <label>Token address</label>
+    <div class="row">
+      <input id="liqTokenAddress" class="input mono" placeholder="0x..." />
+      <button id="btnCheckToken" class="btn">
+        Check
       </button>
-
-      <hr />
-
-      <label>LP amount</label>
-      <input id="removeLpAmount" class="input" placeholder="0.0" />
-
-      <button id="btnRemoveLiquidity" class="btn btn--danger">
-        Remove Liquidity
-      </button>
-
     </div>
+
+    <div id="liqTokenInfo" class="muted"></div>
+
+    <!-- STEP 2: AMOUNTS -->
+    <label>MON amount</label>
+    <input id="liqMonAmount" class="input" placeholder="0.0" />
+
+    <label>Token amount</label>
+    <input id="liqTokenAmount" class="input" placeholder="0.0" />
+
+    <button id="btnAddLiquidity" class="btn btn--primary">
+      Add Liquidity
+    </button>
+
+    <hr />
+
+    <!-- REMOVE -->
+    <h3>Remove Liquidity</h3>
+
+    <label>LP amount</label>
+    <input id="liqLpAmount" class="input" placeholder="0.0" />
+
+    <button id="btnRemoveLiquidity" class="btn btn--danger">
+      Remove
+    </button>
+
+    <div id="liqStatus" class="status"></div>
+
   </div>
 </section>
 
 <!-- ================= POOLS ================= -->
-<section id="viewPools" hidden>
-  <h2>Pools</h2>
+<section id="viewPools" class="card view" hidden>
+  <div class="card__body">
 
-  <div class="card">
-    <div class="card__body">
+    <h2>Pools</h2>
+    <p class="muted">All pools on MonadDex.</p>
 
-      <button id="btnLoadPools" class="btn">
-        Load Pools
-      </button>
+    <button id="btnLoadPools" class="btn">
+      Load Pools
+    </button>
 
-      <div id="poolsList" style="margin-top:10px;">
-        <!-- pool list here -->
-      </div>
+    <div id="poolsList" style="margin-top:12px;"></div>
 
-    </div>
   </div>
 </section>
 

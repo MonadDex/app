@@ -1,246 +1,289 @@
 /* =====================================================
-   MonadDex dApp – Screen Based App.js
-   Network: Monad (ChainId 143)
-   ===================================================== */
+   MonadDex - app.js
+   Simple • Professional • Permissionless
+   ethers.js v5.7.2
+===================================================== */
 
-/* ========== CONFIG ========== */
-const CONFIG = {
-  chainId: 143,
-  chainHex: "0x8f",
-  rpc: "https://rpc.monad.xyz",
-  factory: "0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6",
-  router:  "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E",
-  wmon:    "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A"
-};
+"use strict";
 
-/* ========== ABI (EMBEDDED) ========== */
+/* =========================
+   CONFIG
+========================= */
+
+const CHAIN_ID = 143;
+const RPC_URL = "https://rpc.monad.xyz";
+
+const FACTORY_ADDRESS = "0xd0b770b70bd984B16eDC81537b74a7C11E25d3B6";
+const ROUTER_ADDRESS  = "0x974a22EECcbb3965368b8Ecad7C3a1e89ae0bf6E";
+const WMON_ADDRESS    = "0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A";
+
+/* =========================
+   ABIs (minimal)
+========================= */
+
 const FACTORY_ABI = [
-  "function allPairs(uint256) view returns (address)",
-  "function allPairsLength() view returns (uint256)",
-  "function getPair(address,address) view returns (address)",
-  "function createPair(address,address) returns (address)"
+  "function allPairsLength() view returns (uint)",
+  "function allPairs(uint) view returns (address)",
+  "function getPair(address,address) view returns (address)"
 ];
 
 const ROUTER_ABI = [
-  "function addLiquidityMON(address,uint256,uint256,uint256,address,uint256) payable",
-  "function removeLiquidityMON(address,uint256,uint256,uint256,address,uint256)",
-  "function swapExactMONForTokens(uint256,address,address,uint256) payable",
-  "function swapExactTokensForMON(uint256,uint256,address,address,uint256)"
+  "function createPool(address token) returns (address)",
+  "function addLiquidityMON(address token,uint amountTokenDesired,uint amountTokenMin,uint amountMONMin,address to,uint deadline) payable returns (uint,uint,uint)",
+  "function swapExactMONForTokens(uint amountOutMin,address tokenOut,address to,uint deadline) payable returns (uint)",
 ];
 
 const ERC20_ABI = [
+  "function name() view returns (string)",
   "function symbol() view returns (string)",
-  "function approve(address,uint256)",
-  "function allowance(address,address) view returns (uint256)"
+  "function decimals() view returns (uint8)",
+  "function balanceOf(address) view returns (uint)",
+  "function allowance(address,address) view returns (uint)",
+  "function approve(address,uint) returns (bool)"
 ];
 
-/* ========== GLOBALS ========== */
+const PAIR_ABI = [
+  "function getReserves() view returns (uint112,uint112)",
+  "function token0() view returns (address)",
+  "function token1() view returns (address)"
+];
+
+/* =========================
+   GLOBAL STATE
+========================= */
+
 let provider, signer, account;
-let router, factory;
+let factory, router;
 
-let swapFrom = "MON";
-let swapTo   = null;
-let liqToken = null;
+let currentToken = null;
+let currentTokenInfo = null;
+let currentPair = null;
 
-/* ========== HELPERS ========== */
+/* =========================
+   DOM HELPERS
+========================= */
+
 const $ = id => document.getElementById(id);
 
-function toast(msg, ok = true) {
-  const t = $("toast");
-  t.innerText = msg;
-  t.style.background = ok ? "#22c55e" : "#ef4444";
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3000);
+function shortAddr(a) {
+  return a ? a.slice(0,6) + "..." + a.slice(-4) : "-";
 }
 
-function deadline() {
-  return Math.floor(Date.now() / 1000) + 1200;
+function setStatus(id, msg, type) {
+  const el = $(id);
+  if (!el) return;
+  el.className = "status";
+  if (type) el.classList.add(type);
+  el.textContent = msg;
 }
 
-/* ========== SCREEN CONTROL (CORE) ========== */
-function showScreen(name) {
-  ["swap", "liquidity", "pools"].forEach(s => {
-    $("screen-" + s).classList.toggle("active", s === name);
-    $("menu" + s.charAt(0).toUpperCase() + s.slice(1))
-      .classList.toggle("active", s === name);
-  });
+/* =========================
+   INIT PROVIDER
+========================= */
+
+function initReadProvider() {
+  provider = new ethers.providers.JsonRpcProvider(RPC_URL);
+  factory  = new ethers.Contract(FACTORY_ADDRESS, FACTORY_ABI, provider);
 }
 
-/* ========== MENU EVENTS ========== */
-$("menuSwap").onclick      = () => showScreen("swap");
-$("menuLiquidity").onclick = () => showScreen("liquidity");
-$("menuPools").onclick     = () => {
-  showScreen("pools");
-  loadPools();
-};
+function initWriteProvider() {
+  const web3 = new ethers.providers.Web3Provider(window.ethereum);
+  signer = web3.getSigner();
+  router = new ethers.Contract(ROUTER_ADDRESS, ROUTER_ABI, signer);
+}
 
-/* ========== WALLET ========== */
+/* =========================
+   WALLET
+========================= */
+
 async function connectWallet() {
-  if (!window.ethereum) return alert("MetaMask required");
-
-  await ethereum.request({ method: "eth_requestAccounts" });
-  provider = new ethers.BrowserProvider(window.ethereum);
-  signer   = await provider.getSigner();
-  account  = await signer.getAddress();
-
-  const net = await provider.getNetwork();
-  if (Number(net.chainId) !== CONFIG.chainId) {
-    await ethereum.request({
-      method: "wallet_addEthereumChain",
-      params: [{
-        chainId: CONFIG.chainHex,
-        chainName: "Monad",
-        rpcUrls: [CONFIG.rpc],
-        nativeCurrency: { name: "MON", symbol: "MON", decimals: 18 }
-      }]
-    });
-  }
-
-  router  = new ethers.Contract(CONFIG.router, ROUTER_ABI, signer);
-  factory = new ethers.Contract(CONFIG.factory, FACTORY_ABI, signer);
-
-  $("connectBtn").innerText =
-    account.slice(0, 6) + "..." + account.slice(-4);
-
-  toast("Wallet connected");
-}
-
-/* ========== TOKEN RESOLVE ========== */
-async function resolveToken(input) {
-  if (input === "MON") {
-    return { isNative: true, address: CONFIG.wmon, symbol: "MON" };
-  }
-
-  const addr = ethers.getAddress(input);
-  const erc20 = new ethers.Contract(addr, ERC20_ABI, signer);
-  return {
-    isNative: false,
-    address: addr,
-    symbol: await erc20.symbol(),
-    erc20
-  };
-}
-
-/* ========== SWAP ========== */
-async function swap() {
-  if (!swapTo) return toast("Select token", false);
-  const amt = $("swap_from_amount").value;
-  if (!amt) return;
-
-  const from = await resolveToken(swapFrom);
-  const to   = await resolveToken(swapTo);
-
-  if (from.isNative) {
-    await router.swapExactMONForTokens(
-      0,
-      to.address,
-      account,
-      deadline(),
-      { value: ethers.parseEther(amt) }
-    );
-  } else {
-    const v = ethers.parseEther(amt);
-    const al = await from.erc20.allowance(account, CONFIG.router);
-    if (al < v) await from.erc20.approve(CONFIG.router, ethers.MaxUint256);
-
-    await router.swapExactTokensForMON(
-      v,
-      0,
-      from.address,
-      account,
-      deadline()
-    );
-  }
-
-  toast("Swap successful");
-}
-
-/* ========== LIQUIDITY ========== */
-async function supplyLiquidity() {
-  if (!liqToken) return toast("Select token", false);
-
-  const token = await resolveToken(liqToken);
-  const tokenAmt = ethers.parseEther($("liq_token_amount").value);
-  const monAmt   = ethers.parseEther($("liq_mon_amount").value);
-
-  const al = await token.erc20.allowance(account, CONFIG.router);
-  if (al < tokenAmt) {
-    await token.erc20.approve(CONFIG.router, ethers.MaxUint256);
-  }
-
-  await router.addLiquidityMON(
-    token.address,
-    tokenAmt,
-    0,
-    0,
-    account,
-    deadline(),
-    { value: monAmt }
-  );
-
-  toast("Liquidity added");
-}
-
-/* ========== POOLS ========== */
-async function loadPools() {
-  const box = $("pools_list");
-  box.innerHTML = "";
-
-  const len = await factory.allPairsLength();
-  if (len === 0n) {
-    box.innerText = "No pools";
+  if (!window.ethereum) {
+    alert("Wallet not found");
     return;
   }
 
-  for (let i = 0; i < len; i++) {
-    const pair = await factory.allPairs(i);
-    const div = document.createElement("div");
-    div.innerText = pair;
-    box.appendChild(div);
+  const chainId = await ethereum.request({ method: "eth_chainId" });
+  if (parseInt(chainId,16) !== CHAIN_ID) {
+    alert("Please switch to Monad network");
+    return;
+  }
+
+  initWriteProvider();
+  const accounts = await ethereum.request({ method: "eth_requestAccounts" });
+  account = accounts[0];
+
+  $("walletChip").textContent = "Wallet: " + shortAddr(account);
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+function initNavigation() {
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.onclick = () => {
+      document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+      btn.classList.add("active");
+      $(btn.dataset.view).classList.add("active");
+    };
+  });
+}
+
+/* =========================
+   TOKEN LOAD
+========================= */
+
+async function loadToken(addr) {
+  if (!ethers.utils.isAddress(addr)) throw "Invalid token address";
+
+  const token = new ethers.Contract(addr, ERC20_ABI, provider);
+  const [name, symbol, decimals] = await Promise.all([
+    token.name(),
+    token.symbol(),
+    token.decimals()
+  ]);
+
+  currentToken = addr;
+  currentTokenInfo = { name, symbol, decimals };
+
+  return token;
+}
+
+/* =========================
+   SWAP
+========================= */
+
+async function doSwap() {
+  try {
+    setStatus("swapStatus","",null);
+
+    const tokenAddr = $("swapTokenAddress").value.trim();
+    const monIn = $("swapMonIn").value.trim();
+    if (!tokenAddr || !monIn) throw "Missing input";
+
+    await loadToken(tokenAddr);
+
+    const pair = await factory.getPair(tokenAddr, WMON_ADDRESS);
+    if (pair === ethers.constants.AddressZero) {
+      setStatus("swapStatus","Pool not exist. Create liquidity first.","error");
+      return;
+    }
+
+    const amountIn = ethers.utils.parseEther(monIn);
+
+    setStatus("swapStatus","Swapping...","");
+
+    const tx = await router.swapExactMONForTokens(
+      0,
+      tokenAddr,
+      account,
+      Math.floor(Date.now()/1000)+1200,
+      { value: amountIn }
+    );
+
+    setStatus("swapStatus","Tx sent: "+tx.hash,"");
+    await tx.wait();
+    setStatus("swapStatus","Swap success","success");
+
+  } catch(e) {
+    setStatus("swapStatus", e.toString(),"error");
   }
 }
 
-/* ========== PICKERS ========== */
-$("swap_from_token_btn").onclick = () =>
-  $("picker_from").classList.remove("hidden");
-$("swap_to_token_btn").onclick = () =>
-  $("picker_to").classList.remove("hidden");
-$("liq_token_btn").onclick = () =>
-  $("picker_liq").classList.remove("hidden");
+/* =========================
+   ADD LIQUIDITY
+========================= */
 
-$("picker_from_search").onchange = e => {
-  swapFrom = e.target.value || "MON";
-  $("swap_from_symbol").innerText = swapFrom;
-  $("picker_from").classList.add("hidden");
-};
+async function addLiquidity() {
+  try {
+    setStatus("liqStatus","",null);
 
-$("picker_to_search").onchange = e => {
-  swapTo = e.target.value;
-  $("swap_to_symbol").innerText = swapTo;
-  $("picker_to").classList.add("hidden");
-};
+    const tokenAddr = $("liqTokenAddress").value.trim();
+    const tokenAmt = $("liqTokenAmount").value.trim();
+    const monAmt = $("liqMonAmount").value.trim();
 
-$("picker_liq_search").onchange = e => {
-  liqToken = e.target.value;
-  $("liq_token_symbol").innerText = liqToken;
-  $("picker_liq").classList.add("hidden");
-};
+    if (!tokenAddr || !tokenAmt || !monAmt) throw "Missing input";
 
-/* ========== BUTTON EVENTS ========== */
-$("connectBtn").onclick = connectWallet;
-$("switchNetworkBtn").onclick = connectWallet;
-$("swap_execute_btn").onclick = swap;
-$("liq_supply_btn").onclick = supplyLiquidity;
+    const token = await loadToken(tokenAddr);
+    initWriteProvider();
 
-$("swap_flip_btn").onclick = () => {
-  if (!swapTo) return;
-  [swapFrom, swapTo] = [swapTo, swapFrom];
-  [$("swap_from_symbol").innerText,
-   $("swap_to_symbol").innerText] =
-  [$("swap_to_symbol").innerText,
-   $("swap_from_symbol").innerText];
-};
+    const amountToken = ethers.utils.parseUnits(tokenAmt, currentTokenInfo.decimals);
+    const amountMON   = ethers.utils.parseEther(monAmt);
 
-/* ========== INIT ========== */
-$("year").innerText = new Date().getFullYear();
-showScreen("swap");
+    const allowance = await token.allowance(account, ROUTER_ADDRESS);
+    if (allowance.lt(amountToken)) {
+      const txA = await token.connect(signer).approve(ROUTER_ADDRESS, ethers.constants.MaxUint256);
+      await txA.wait();
+    }
+
+    setStatus("liqStatus","Adding liquidity...","");
+
+    const tx = await router.addLiquidityMON(
+      tokenAddr,
+      amountToken,
+      0,
+      0,
+      account,
+      Math.floor(Date.now()/1000)+1200,
+      { value: amountMON }
+    );
+
+    setStatus("liqStatus","Tx sent: "+tx.hash,"");
+    await tx.wait();
+    setStatus("liqStatus","Liquidity added","success");
+
+  } catch(e) {
+    setStatus("liqStatus", e.toString(),"error");
+  }
+}
+
+/* =========================
+   POOLS
+========================= */
+
+async function loadPools() {
+  const list = $("poolsList");
+  list.innerHTML = "";
+
+  const len = await factory.allPairsLength();
+  for (let i=0;i<len;i++) {
+    const pairAddr = await factory.allPairs(i);
+    const pair = new ethers.Contract(pairAddr, PAIR_ABI, provider);
+
+    const [r0,r1] = await pair.getReserves();
+    const t0 = await pair.token0();
+    const t1 = await pair.token1();
+
+    const div = document.createElement("div");
+    div.className = "pool-item";
+    div.innerHTML = `
+      <div class="pool-item-title">${shortAddr(t0)} / ${shortAddr(t1)}</div>
+      <div class="pool-item-sub">Reserve0: ${ethers.utils.formatEther(r0)}</div>
+      <div class="pool-item-sub">Reserve1: ${ethers.utils.formatEther(r1)}</div>
+      <div class="pool-item-sub">Pair: ${shortAddr(pairAddr)}</div>
+    `;
+    list.appendChild(div);
+  }
+}
+
+/* =========================
+   INIT
+========================= */
+
+async function init() {
+  initReadProvider();
+  initNavigation();
+
+  $("btnConnect").onclick = connectWallet;
+  $("btnSwap").onclick = doSwap;
+  $("btnAddLiquidity").onclick = addLiquidity;
+
+  document.querySelector('[data-view="poolsView"]').onclick = async () => {
+    await loadPools();
+  };
+
+  $("networkChip").textContent = "Network: Monad";
+}
+
+document.addEventListener("DOMContentLoaded", init);

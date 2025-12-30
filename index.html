@@ -5,131 +5,109 @@
   <title>MonadDex</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Favicon / Logo -->
-  <link rel="icon" href="logo.png" />
-
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
-
-  <!-- Ethers -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-
-  <!-- App -->
-  <script defer src="app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
 </head>
 
 <body>
 
-<!-- =========================
-     HEADER
-========================= -->
-<header class="header">
+<!-- ================= HEADER ================= -->
+<div class="header">
   <div class="header-left">
     <img src="logo.png" class="logo" />
-    <div class="brand">
+    <div>
       <div class="brand-name">MonadDex</div>
-      <div class="brand-sub">Permissionless AMM on Monad</div>
+      <div class="brand-sub">Simple AMM on Monad</div>
     </div>
   </div>
 
   <div class="header-right">
-    <div class="chip" id="networkChip">Network: -</div>
-    <div class="chip" id="walletChip">Wallet: Not connected</div>
-    <button id="btnConnect" class="btn primary">Connect</button>
+    <div id="networkChip" class="chip">Network: -</div>
+    <div id="walletChip" class="chip">Wallet: Not connected</div>
+    <button id="btnConnect" class="btn primary">Connect Wallet</button>
   </div>
-</header>
+</div>
 
-<!-- =========================
-     NAV MENU
-========================= -->
-<nav class="nav">
+<!-- ================= NAV ================= -->
+<div class="nav">
   <button class="nav-btn active" data-view="swapView">Swap</button>
   <button class="nav-btn" data-view="liquidityView">Add Liquidity</button>
   <button class="nav-btn" data-view="poolsView">Pools</button>
-</nav>
+</div>
 
-<!-- =========================
-     MAIN CONTAINER
-========================= -->
-<main class="container">
+<!-- ================= MAIN ================= -->
+<div class="container">
 
-  <!-- =========================
-       SWAP VIEW
-  ========================= -->
-  <section id="swapView" class="view active">
-
-    <h2 class="view-title">Swap</h2>
+  <!-- ========== SWAP ========== -->
+  <div id="swapView" class="view active">
+    <div class="view-title">Swap MON → Token</div>
 
     <div class="card">
-
-      <label class="label">Token address</label>
+      <div class="label">Token address</div>
       <input id="swapTokenAddress" class="input" placeholder="0x..." />
 
-      <div class="divider"></div>
-
-      <label class="label">You pay (MON)</label>
+      <div class="label">MON amount</div>
       <input id="swapMonIn" class="input large" placeholder="0.0" />
-
-      <div class="swap-arrow">↓</div>
-
-      <label class="label">You receive (Token)</label>
-      <input id="swapTokenOut" class="input large" placeholder="0.0" disabled />
 
       <button id="btnSwap" class="btn primary full">Swap</button>
 
       <div id="swapStatus" class="status"></div>
     </div>
+  </div>
 
-  </section>
-
-  <!-- =========================
-       ADD LIQUIDITY VIEW
-  ========================= -->
-  <section id="liquidityView" class="view">
-
-    <h2 class="view-title">Add Liquidity</h2>
+  <!-- ========== ADD LIQUIDITY ========== -->
+  <div id="liquidityView" class="view">
+    <div class="view-title">Add Liquidity (Token + MON)</div>
 
     <div class="card">
 
-      <label class="label">Token address</label>
+      <!-- Token load -->
+      <div class="label">Token address</div>
       <input id="liqTokenAddress" class="input" placeholder="0x..." />
+      <button id="btnLoadToken" class="btn full">Load Token</button>
+
+      <!-- Token info -->
+      <div id="tokenInfo" class="status"></div>
 
       <div class="divider"></div>
 
-      <label class="label">Token amount</label>
-      <input id="liqTokenAmount" class="input" placeholder="0.0" />
+      <!-- Pool status -->
+      <div id="poolStatus" class="status"></div>
+      <button id="btnCreatePool" class="btn full" style="display:none">
+        Create Pool
+      </button>
 
-      <label class="label">MON amount</label>
-      <input id="liqMonAmount" class="input" placeholder="0.0" />
+      <div class="divider"></div>
 
-      <button id="btnAddLiquidity" class="btn primary full">Add Liquidity</button>
+      <!-- Amounts -->
+      <div class="label">Token amount</div>
+      <input id="liqTokenAmount" class="input large" placeholder="0.0" />
+
+      <div class="label">MON amount</div>
+      <input id="liqMonAmount" class="input large" placeholder="0.0" />
+
+      <button id="btnAddLiquidity" class="btn primary full">
+        Add Liquidity
+      </button>
 
       <div id="liqStatus" class="status"></div>
     </div>
+  </div>
 
-  </section>
+  <!-- ========== POOLS ========== -->
+  <div id="poolsView" class="view">
+    <div class="view-title">Liquidity Pools</div>
 
-  <!-- =========================
-       POOLS VIEW
-  ========================= -->
-  <section id="poolsView" class="view">
+    <div id="poolsList" class="pools-list"></div>
+  </div>
 
-    <h2 class="view-title">Liquidity Pools</h2>
+</div>
 
-    <div id="poolsList" class="pools-list">
-      <!-- JS will render pools here -->
-    </div>
+<!-- ================= FOOTER ================= -->
+<div class="footer">
+  MonadDex · Permissionless AMM on Monad
+</div>
 
-  </section>
-
-</main>
-
-<!-- =========================
-     FOOTER
-========================= -->
-<footer class="footer">
-  <div>MonadDex – Fully on-chain & permissionless</div>
-</footer>
-
+<script src="app.js"></script>
 </body>
 </html>

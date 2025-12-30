@@ -1,142 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>MonadDex</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <link rel="icon" href="logo.png">
-  <link rel="stylesheet" href="style.css">
+  <!-- Favicon / Logo -->
+  <link rel="icon" href="logo.png" />
 
-  <!-- ethers v6 -->
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-  <script src="app.js" defer></script>
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Ethers -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+  <!-- App -->
+  <script defer src="app.js"></script>
 </head>
 
 <body>
 
-<!-- ================= HEADER ================= -->
-<header class="app-header">
-  <div class="logo">
-    <img src="logo.png" alt="MonadDex">
-    <span>MonadDex</span>
+<!-- =========================
+     HEADER
+========================= -->
+<header class="header">
+  <div class="header-left">
+    <img src="logo.png" class="logo" />
+    <div class="brand">
+      <div class="brand-name">MonadDex</div>
+      <div class="brand-sub">Permissionless AMM on Monad</div>
+    </div>
   </div>
 
-  <nav class="menu">
-    <button id="menuSwap" class="menu-btn active">Swap</button>
-    <button id="menuLiquidity" class="menu-btn">Liquidity</button>
-    <button id="menuPools" class="menu-btn">Pools</button>
-  </nav>
-
-  <div class="wallet">
-    <button id="switchNetworkBtn" class="btn ghost">Switch</button>
-    <button id="connectBtn" class="btn primary">Connect</button>
+  <div class="header-right">
+    <div class="chip" id="networkChip">Network: -</div>
+    <div class="chip" id="walletChip">Wallet: Not connected</div>
+    <button id="btnConnect" class="btn primary">Connect</button>
   </div>
 </header>
 
-<!-- ================= MAIN ================= -->
-<main class="app-main">
+<!-- =========================
+     NAV MENU
+========================= -->
+<nav class="nav">
+  <button class="nav-btn active" data-view="swapView">Swap</button>
+  <button class="nav-btn" data-view="liquidityView">Add Liquidity</button>
+  <button class="nav-btn" data-view="poolsView">Pools</button>
+</nav>
 
-  <!-- ===== SWAP SCREEN ===== -->
-  <section id="screen-swap" class="screen active">
+<!-- =========================
+     MAIN CONTAINER
+========================= -->
+<main class="container">
 
-    <h2>Swap</h2>
+  <!-- =========================
+       SWAP VIEW
+  ========================= -->
+  <section id="swapView" class="view active">
+
+    <h2 class="view-title">Swap</h2>
 
     <div class="card">
 
-      <div class="row">
-        <label>From</label>
-        <div class="input-group">
-          <button id="swap_from_token_btn" class="token-btn">
-            <span id="swap_from_symbol">MON</span>
-          </button>
-          <input id="swap_from_amount" type="number" placeholder="0.0">
-        </div>
-      </div>
+      <label class="label">Token address</label>
+      <input id="swapTokenAddress" class="input" placeholder="0x..." />
 
-      <div class="row center">
-        <button id="swap_flip_btn" class="flip-btn">⇅</button>
-      </div>
+      <div class="divider"></div>
 
-      <div class="row">
-        <label>To</label>
-        <div class="input-group">
-          <button id="swap_to_token_btn" class="token-btn">
-            <span id="swap_to_symbol">Select token</span>
-          </button>
-          <input id="swap_to_amount" type="number" placeholder="0.0" disabled>
-        </div>
-      </div>
+      <label class="label">You pay (MON)</label>
+      <input id="swapMonIn" class="input large" placeholder="0.0" />
 
-      <button id="swap_execute_btn" class="btn primary full">Swap</button>
+      <div class="swap-arrow">↓</div>
+
+      <label class="label">You receive (Token)</label>
+      <input id="swapTokenOut" class="input large" placeholder="0.0" disabled />
+
+      <button id="btnSwap" class="btn primary full">Swap</button>
+
+      <div id="swapStatus" class="status"></div>
     </div>
 
   </section>
 
-  <!-- ===== LIQUIDITY SCREEN ===== -->
-  <section id="screen-liquidity" class="screen">
+  <!-- =========================
+       ADD LIQUIDITY VIEW
+  ========================= -->
+  <section id="liquidityView" class="view">
 
-    <h2>Liquidity</h2>
+    <h2 class="view-title">Add Liquidity</h2>
 
     <div class="card">
 
-      <div class="row">
-        <label>MON Amount</label>
-        <input id="liq_mon_amount" type="number" placeholder="0.0">
-      </div>
+      <label class="label">Token address</label>
+      <input id="liqTokenAddress" class="input" placeholder="0x..." />
 
-      <div class="row">
-        <label>Token</label>
-        <div class="input-group">
-          <button id="liq_token_btn" class="token-btn">
-            <span id="liq_token_symbol">Select token</span>
-          </button>
-          <input id="liq_token_amount" type="number" placeholder="0.0">
-        </div>
-      </div>
+      <div class="divider"></div>
 
-      <button id="liq_supply_btn" class="btn primary full">
-        Supply Liquidity
-      </button>
+      <label class="label">Token amount</label>
+      <input id="liqTokenAmount" class="input" placeholder="0.0" />
+
+      <label class="label">MON amount</label>
+      <input id="liqMonAmount" class="input" placeholder="0.0" />
+
+      <button id="btnAddLiquidity" class="btn primary full">Add Liquidity</button>
+
+      <div id="liqStatus" class="status"></div>
     </div>
 
   </section>
 
-  <!-- ===== POOLS SCREEN ===== -->
-  <section id="screen-pools" class="screen">
+  <!-- =========================
+       POOLS VIEW
+  ========================= -->
+  <section id="poolsView" class="view">
 
-    <h2>Pools</h2>
+    <h2 class="view-title">Liquidity Pools</h2>
 
-    <div class="card">
-      <div id="pools_list" class="pool-list">
-        No pools
-      </div>
+    <div id="poolsList" class="pools-list">
+      <!-- JS will render pools here -->
     </div>
 
   </section>
 
 </main>
 
-<!-- ================= FOOTER ================= -->
-<footer class="app-footer">
-  © <span id="year"></span> MonadDex
+<!-- =========================
+     FOOTER
+========================= -->
+<footer class="footer">
+  <div>MonadDex – Fully on-chain & permissionless</div>
 </footer>
-
-<!-- ================= TOAST ================= -->
-<div id="toast" class="toast"></div>
-
-<!-- ================= TOKEN PICKERS ================= -->
-<div id="picker_from" class="picker hidden">
-  <input id="picker_from_search" placeholder="Enter token address">
-</div>
-
-<div id="picker_to" class="picker hidden">
-  <input id="picker_to_search" placeholder="Enter token address">
-</div>
-
-<div id="picker_liq" class="picker hidden">
-  <input id="picker_liq_search" placeholder="Enter token address">
-</div>
 
 </body>
 </html>
